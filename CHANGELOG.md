@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.2](https://github.com/Cloud-for-You/storage-operator/compare/v1.0.1...v1.0.2) (2024-02-09)
+
+
+### Bug Fixes
+
+* Fix bug next new ([#5](https://github.com/Cloud-for-You/storage-operator/issues/5)) ([170325c](https://github.com/Cloud-for-You/storage-operator/commit/170325c27e9069ed955069c73df5695b47557797))
+
 ## [1.0.1](https://github.com/Cloud-for-You/storage-operator/compare/v1.0.0...v1.0.1) (2024-02-09)
 
 
