@@ -1,0 +1,27 @@
+# permissions for end users to view nfs.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/instance: nfs-viewer-role
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: storage-operator
+    app.kubernetes.io/part-of: storage-operator
+    app.kubernetes.io/managed-by: kustomize
+  name: nfs-viewer-role
+rules:
+- apiGroups:
+  - storage.cfy.cz
+  resources:
+  - nfs
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - storage.cfy.cz
+  resources:
+  - nfs/status
+  verbs:
+  - get

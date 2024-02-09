@@ -1,0 +1,4 @@
+{
+    "port": "/dev/tty.usbserial-2240",
+    "board": "arduino:avr:unowifi"
+}

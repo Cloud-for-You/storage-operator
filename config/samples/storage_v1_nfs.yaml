@@ -1,0 +1,12 @@
+apiVersion: storage.cfy.cz/v1
+kind: Nfs
+metadata:
+  labels:
+    app.kubernetes.io/name: nfs
+    app.kubernetes.io/instance: nfs-sample
+    app.kubernetes.io/part-of: storage-operator
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: storage-operator
+  name: nfs-sample
+spec:
+  # TODO(user): Add fields here

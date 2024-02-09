@@ -1,0 +1,10 @@
+---
+apiVersion: storage.cfy.cz/v1
+kind: Nfs
+metadata:
+  name: sample-nfs1
+  namespace: example
+spec:
+  server: nfsserver.domena.tld
+  path: /directory/path
+

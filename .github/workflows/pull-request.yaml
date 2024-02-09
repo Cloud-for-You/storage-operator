@@ -1,0 +1,20 @@
+name: Create pull-request
+on:
+  pull_request:
+    types:
+      - opened
+      - reopened
+    branches:
+      - main
+
+jobs:
+  pull-request:
+    name: policy
+    runs-on: ubuntu-latest
+    steps:
+      - name: test
+        run: |
+          echo "Test create pull-request"
+
+
+    
