@@ -4,9 +4,9 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.14.0
-  name: nfs.storage.cfy.cz
+  name: nfs.storage.cfy
 spec:
-  group: storage.cfy.cz
+  group: storage.cfy
   names:
     kind: Nfs
     listKind: NfsList

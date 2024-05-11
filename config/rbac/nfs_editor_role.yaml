@@ -12,7 +12,7 @@ metadata:
   name: nfs-editor-role
 rules:
 - apiGroups:
-  - storage.cfy.cz
+  - storage.cfy
   resources:
   - nfs
   verbs:
@@ -24,7 +24,7 @@ rules:
   - update
   - watch
 - apiGroups:
-  - storage.cfy.cz
+  - storage.cfy
   resources:
   - nfs/status
   verbs:

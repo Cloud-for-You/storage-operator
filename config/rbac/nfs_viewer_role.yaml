@@ -12,7 +12,7 @@ metadata:
   name: nfs-viewer-role
 rules:
 - apiGroups:
-  - storage.cfy.cz
+  - storage.cfy
   resources:
   - nfs
   verbs:
@@ -20,7 +20,7 @@ rules:
   - list
   - watch
 - apiGroups:
-  - storage.cfy.cz
+  - storage.cfy
   resources:
   - nfs/status
   verbs:
