@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.1](https://github.com/Cloud-for-You/storage-operator/compare/v1.1.0...v1.1.1) (2024-05-12)
+
+
+### Bug Fixes
+
+* Dockerfile ([#11](https://github.com/Cloud-for-You/storage-operator/issues/11)) ([a19fdf4](https://github.com/Cloud-for-You/storage-operator/commit/a19fdf4ed442dfe8d2759bc0359795a6284c293d))
+
 ## [1.1.0](https://github.com/Cloud-for-You/storage-operator/compare/v1.0.2...v1.1.0) (2024-05-12)
 
 
