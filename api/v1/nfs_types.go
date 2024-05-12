@@ -23,6 +23,11 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
+const (
+	PhasePending = "Pending"
+	PhaseBound   = "Bound"
+)
+
 // NfsSpec defines the desired state of Nfs
 type NfsSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
@@ -37,10 +42,13 @@ type NfsSpec struct {
 type NfsStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+	Phase string `json:"phase,omitempty"`
 }
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+//+kubebuilder:printcolumn:name="STATUS",type=string,JSONPath=`.status.phase`
+//+kubebuilder:printcolumn:name="AGE",type="date",JSONPath=".metadata.creationTimestamp"
 
 // Nfs is the Schema for the nfs API
 type Nfs struct {

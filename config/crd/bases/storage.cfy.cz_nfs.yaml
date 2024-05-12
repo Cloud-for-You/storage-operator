@@ -14,7 +14,14 @@ spec:
     singular: nfs
   scope: Namespaced
   versions:
-  - name: v1
+  - additionalPrinterColumns:
+    - jsonPath: .status.phase
+      name: STATUS
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: AGE
+      type: date
+    name: v1
     schema:
       openAPIV3Schema:
         description: Nfs is the Schema for the nfs API
@@ -51,6 +58,12 @@ spec:
             type: object
           status:
             description: NfsStatus defines the observed state of Nfs
+            properties:
+              phase:
+                description: |-
+                  INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
+                  Important: Run "make" to regenerate code after modifying this file
+                type: string
             type: object
         type: object
     served: true
