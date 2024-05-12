@@ -141,6 +141,26 @@ func (r *NfsReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 		}
 	}
 
+	// Update status.phase over PVC
+	if nfs.Status.Phase == "" {
+		statusUpdate := storagev1.NfsStatus{Phase: "Pending"}
+		nfs.Status = statusUpdate
+		if err := r.Status().Update(ctx, nfs); err != nil {
+			log.Error(err, "Failed to update Nfs status")
+		}
+		return ctrl.Result{Requeue: true}, nil
+	} else {
+		err = r.Get(ctx, types.NamespacedName{Name: nfs.Name, Namespace: nfs.Namespace}, foundPVC)
+		if err != nil {
+			return ctrl.Result{Requeue: true}, nil
+		}
+		statusUpdate := storagev1.NfsStatus{Phase: string(foundPVC.Status.Phase)}
+		nfs.Status = statusUpdate
+		if err := r.Status().Update(ctx, nfs); err != nil {
+			log.Error(err, "Failed to update Nfs status")
+		}
+	}
+
 	return ctrl.Result{}, nil
 }
 
