@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://github.com/Cloud-for-You/storage-operator/compare/v1.0.2...v1.1.0) (2024-05-12)
+
+
+### Features
+
+* Add status for CR ([#8](https://github.com/Cloud-for-You/storage-operator/issues/8)) ([c9cb512](https://github.com/Cloud-for-You/storage-operator/commit/c9cb5121d3a6419cc51326b55a230e57c07ac24f))
+
 ## [1.0.2](https://github.com/Cloud-for-You/storage-operator/compare/v1.0.1...v1.0.2) (2024-02-09)
 
 
