@@ -26,6 +26,7 @@ import (
 const (
 	PhasePending = "Pending"
 	PhaseBound   = "Bound"
+	PhaseUnknown = "Unknown"
 )
 
 // NfsSpec defines the desired state of Nfs
