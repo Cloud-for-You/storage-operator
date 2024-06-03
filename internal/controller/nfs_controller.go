@@ -18,6 +18,7 @@ package controller
 
 import (
 	"context"
+	"time"
 
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -31,6 +32,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	storagev1 "github.com/Cloud-for-You/storage-operator/api/v1"
+	"github.com/Cloud-for-You/storage-operator/pkg/nfsclient"
 	"github.com/Cloud-for-You/storage-operator/pkg/setup"
 	"github.com/go-logr/logr"
 )
@@ -96,6 +98,37 @@ func (r *NfsReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 			}
 		}
 		return ctrl.Result{}, nil
+	}
+
+	// Check existing mountPath
+	mount, err := nfsclient.DialMount(nfs.Spec.Server)
+	if err != nil {
+		log.Error(err, "unable to dial MOUNT service")
+	}
+	defer mount.Close()
+	AllNfsExports, err := mount.Exports()
+	if err != nil {
+		log.Error(err, "unable to export volumes")
+	}
+	/*
+		// Vypsat data ve formátu JSON na standardní výstup
+		jsonData, err := json.MarshalIndent(AllNfsExports, "", "    ")
+		if err != nil {
+			log.Error(err, "Chyba kódování do formátu JSON")
+		}
+		fmt.Println(string(jsonData))
+	*/
+	if !containsExportPath(AllNfsExports, nfs.Spec.Path) {
+		// Nastavime status na nejaky Error a zajistime novou rekoncilaci za cca 10s
+		statusUpdate := storagev1.NfsStatus{
+			Phase:   "Pending",
+			Message: "The NFS server does not export the specified directory " + nfs.Spec.Path + ".",
+		}
+		nfs.Status = statusUpdate
+		if err := r.Status().Update(ctx, nfs); err != nil {
+			log.Error(err, "Failed to update Nfs status")
+		}
+		return ctrl.Result{RequeueAfter: 10 * time.Second}, nil
 	}
 
 	// Create/Update/Delete PersistentVolumeClaim
@@ -231,4 +264,14 @@ func (r *NfsReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Owns(&v1.PersistentVolumeClaim{}).
 		Owns(&v1.PersistentVolume{}).
 		Complete(r)
+}
+
+// funkce pro ověření přítomnosti exportovaneho Path
+func containsExportPath(exports []nfsclient.Export, searchString string) bool {
+	for _, export := range exports {
+		if export.Directory == searchString {
+			return true
+		}
+	}
+	return false
 }

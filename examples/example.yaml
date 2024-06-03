@@ -5,6 +5,6 @@ metadata:
   name: sample-nfs1
   namespace: example
 spec:
-  server: nfsserver.domena.tld
-  path: /directory/path
+  server: 172.16.4.102
+  path: /volume1/nfs-exports
 
