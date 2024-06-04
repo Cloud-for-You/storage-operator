@@ -100,7 +100,7 @@ func (r *NfsReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 		return ctrl.Result{}, nil
 	}
 
-	// Check existing mountPath
+	// Verify the existence of spec.path on the Nfs server
 	mount, err := nfsclient.DialMount(nfs.Spec.Server)
 	if err != nil {
 		log.Error(err, "unable to dial MOUNT service")
