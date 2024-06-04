@@ -110,14 +110,7 @@ func (r *NfsReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 	if err != nil {
 		log.Error(err, "unable to export volumes")
 	}
-	/*
-		// Vypsat data ve formátu JSON na standardní výstup
-		jsonData, err := json.MarshalIndent(AllNfsExports, "", "    ")
-		if err != nil {
-			log.Error(err, "Chyba kódování do formátu JSON")
-		}
-		fmt.Println(string(jsonData))
-	*/
+
 	if !containsExportPath(AllNfsExports, nfs.Spec.Path) {
 		// Nastavime status na nejaky Error a zajistime novou rekoncilaci za cca 10s
 		statusUpdate := storagev1.NfsStatus{
