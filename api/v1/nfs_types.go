@@ -27,6 +27,7 @@ const (
 	PhasePending = "Pending"
 	PhaseBound   = "Bound"
 	PhaseUnknown = "Unknown"
+	PhaseError   = "Error"
 )
 
 // NfsSpec defines the desired state of Nfs
