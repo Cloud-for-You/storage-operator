@@ -18,6 +18,9 @@ spec:
     - jsonPath: .status.phase
       name: STATUS
       type: string
+    - jsonPath: .status.pvcName
+      name: CLAIM
+      type: string
     - jsonPath: .metadata.creationTimestamp
       name: AGE
       type: date
@@ -65,6 +68,8 @@ spec:
                 description: |-
                   INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
                   Important: Run "make" to regenerate code after modifying this file
+                type: string
+              pvcName:
                 type: string
             type: object
         type: object
