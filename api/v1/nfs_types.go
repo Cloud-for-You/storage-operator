@@ -45,12 +45,14 @@ type NfsStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 	Phase   string `json:"phase,omitempty"`
+	PVCName string `json:"pvcName,omitempty"`
 	Message string `json:"message,omitempty"`
 }
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 //+kubebuilder:printcolumn:name="STATUS",type=string,JSONPath=`.status.phase`
+//+kubebuilder:printcolumn:name="CLAIM",type=string,JSONPath=`.status.pvcName`
 //+kubebuilder:printcolumn:name="AGE",type="date",JSONPath=".metadata.creationTimestamp"
 
 // Nfs is the Schema for the nfs API
