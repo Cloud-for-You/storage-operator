@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.0](https://github.com/Cloud-for-You/storage-operator/compare/v1.2.0...v1.3.0) (2024-06-05)
+
+
+### Features
+
+* Pridani informace do status pro svazani s PVC ([#19](https://github.com/Cloud-for-You/storage-operator/issues/19)) ([7e428ba](https://github.com/Cloud-for-You/storage-operator/commit/7e428baa33d47813fc124ef6923cdcbed39760a4))
+
 ## [1.2.0](https://github.com/Cloud-for-You/storage-operator/compare/v1.1.1...v1.2.0) (2024-06-05)
 
 
