@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.0](https://github.com/Cloud-for-You/storage-operator/compare/v1.1.1...v1.2.0) (2024-06-05)
+
+
+### Features
+
+* 13 implementovat checker pro existenci exportu ([#15](https://github.com/Cloud-for-You/storage-operator/issues/15)) ([0aa0fe5](https://github.com/Cloud-for-You/storage-operator/commit/0aa0fe58eabed2ae4027ddb5bc47477398c3c585))
+
 ## [1.1.1](https://github.com/Cloud-for-You/storage-operator/compare/v1.1.0...v1.1.1) (2024-05-12)
 
 
