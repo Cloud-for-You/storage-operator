@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.0](https://github.com/Cloud-for-You/storage-operator/compare/v1.3.0...v1.4.0) (2024-06-13)
+
+
+### Features
+
+* Implementace StorageClass ([#23](https://github.com/Cloud-for-You/storage-operator/issues/23)) ([8664a4f](https://github.com/Cloud-for-You/storage-operator/commit/8664a4fb24feeaf3467f8dbd4b8a98cbd7823a7e))
+
 ## [1.3.0](https://github.com/Cloud-for-You/storage-operator/compare/v1.2.0...v1.3.0) (2024-06-05)
 
 
