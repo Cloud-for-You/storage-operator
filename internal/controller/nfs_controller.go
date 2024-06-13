@@ -34,7 +34,7 @@ import (
 
 	storagev1 "github.com/Cloud-for-You/storage-operator/api/v1"
 	"github.com/Cloud-for-You/storage-operator/pkg/nfsclient"
-	"github.com/Cloud-for-You/storage-operator/pkg/setup"
+	sc "github.com/Cloud-for-You/storage-operator/pkg/storageclass"
 	"github.com/go-logr/logr"
 )
 
@@ -220,7 +220,13 @@ func (r *NfsReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 }
 
 func (r *NfsReconciler) pvcForNfs(m *storagev1.Nfs) *v1.PersistentVolumeClaim {
-	storageClassName := setup.GetStorageClass()
+	sc, err := sc.GetStorageClass("nfs")
+	if err != nil {
+		log.Log.Error(err, "not found storageclass")
+	}
+	if err != nil {
+		log.Log.Error(err, "not found storageclass")
+	}
 	pvc := &v1.PersistentVolumeClaim{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      m.Name,
@@ -233,7 +239,7 @@ func (r *NfsReconciler) pvcForNfs(m *storagev1.Nfs) *v1.PersistentVolumeClaim {
 					v1.ResourceName(v1.ResourceStorage): resource.MustParse("1Gi"),
 				},
 			},
-			StorageClassName: &storageClassName,
+			StorageClassName: &sc.Name,
 			VolumeName:       m.Namespace + "-" + m.Name,
 		},
 	}
@@ -243,7 +249,10 @@ func (r *NfsReconciler) pvcForNfs(m *storagev1.Nfs) *v1.PersistentVolumeClaim {
 
 func (r *NfsReconciler) pvForNfs(m *storagev1.Nfs) *v1.PersistentVolume {
 	fsVolumeMode := v1.PersistentVolumeFilesystem
-	storageClassName := setup.GetStorageClass()
+	sc, err := sc.GetStorageClass("nfs")
+	if err != nil {
+		log.Log.Error(err, "not found storageclass")
+	}
 	pv := &v1.PersistentVolume{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: m.Namespace + "-" + m.Name,
@@ -254,9 +263,9 @@ func (r *NfsReconciler) pvForNfs(m *storagev1.Nfs) *v1.PersistentVolume {
 				v1.ResourceName(v1.ResourceStorage): resource.MustParse("1Gi"),
 			},
 			VolumeMode:                    &fsVolumeMode,
-			StorageClassName:              storageClassName,
-			PersistentVolumeReclaimPolicy: v1.PersistentVolumeReclaimRetain,
-			MountOptions:                  []string{"nfsvers=4", "hard", "intr"},
+			StorageClassName:              sc.Name,
+			PersistentVolumeReclaimPolicy: *sc.ReclaimPolicy,
+			MountOptions:                  sc.MountOptions,
 			PersistentVolumeSource: v1.PersistentVolumeSource{
 				NFS: &v1.NFSVolumeSource{
 					Server:   m.Spec.Server,
