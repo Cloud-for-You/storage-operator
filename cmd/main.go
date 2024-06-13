@@ -36,6 +36,7 @@ import (
 
 	storagev1 "github.com/Cloud-for-You/storage-operator/api/v1"
 	"github.com/Cloud-for-You/storage-operator/internal/controller"
+	sc "github.com/Cloud-for-You/storage-operator/pkg/storageclass"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -119,6 +120,13 @@ func main() {
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
+		os.Exit(1)
+	}
+
+	// Verify existing StorageClasses for every controller
+	var storageClassTypes = []string{"nfs"}
+	if !sc.VerifyStorageClassesExists(storageClassTypes) {
+		setupLog.Error(err, "failed to verify existing storageclass")
 		os.Exit(1)
 	}
 
