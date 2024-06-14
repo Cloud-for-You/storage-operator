@@ -9,5 +9,6 @@ mountOptions:
   - nfsvers=4
   - hard
   - intr
+allowVolumeExpansion: true
 reclaimPolicy: Retain
 volumeBindingMode: Immediate

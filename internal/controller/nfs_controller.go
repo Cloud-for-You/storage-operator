@@ -191,6 +191,28 @@ func (r *NfsReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 		return ctrl.Result{}, err
 	}
 
+	// Test pro resizing
+	requestedSize := resource.MustParse(nfs.Spec.Capacity)
+	currentSize := foundPV.Spec.Capacity[v1.ResourceStorage]
+
+	if requestedSize.Cmp(currentSize) > 0 {
+		log.Info("Volume resizing")
+		if err := r.expandVolume(ctx, foundPV, requestedSize); err != nil {
+			log.Error(err, "Failed to expand volume")
+			return ctrl.Result{}, err
+		}
+		foundPVC.Status.Capacity[v1.ResourceStorage] = requestedSize
+		if err := r.Status().Update(ctx, foundPVC); err != nil {
+			log.Error(err, "Failed to update PVC status")
+			return ctrl.Result{}, err
+		}
+		foundPV.Spec.Capacity[v1.ResourceStorage] = requestedSize
+		if err := r.Update(ctx, foundPV); err != nil {
+			log.Error(err, "Failed to update PV")
+			return ctrl.Result{}, err
+		}
+	}
+
 	// Add finalizer for all CR
 	if !controllerutil.ContainsFinalizer(nfs, nfsFinalizer) {
 		controllerutil.AddFinalizer(nfs, nfsFinalizer)
@@ -244,7 +266,7 @@ func (r *NfsReconciler) pvcForNfs(m *storagev1.Nfs) (*v1.PersistentVolumeClaim, 
 			AccessModes: []v1.PersistentVolumeAccessMode{v1.ReadWriteMany},
 			Resources: v1.VolumeResourceRequirements{
 				Requests: v1.ResourceList{
-					v1.ResourceStorage: resource.MustParse("1Gi"),
+					v1.ResourceStorage: resource.MustParse(m.Spec.Capacity),
 				},
 			},
 			StorageClassName: &sc.Name,
@@ -271,7 +293,7 @@ func (r *NfsReconciler) pvForNfs(m *storagev1.Nfs) *v1.PersistentVolume {
 		Spec: v1.PersistentVolumeSpec{
 			AccessModes: []v1.PersistentVolumeAccessMode{v1.ReadWriteMany},
 			Capacity: v1.ResourceList{
-				v1.ResourceStorage: resource.MustParse("1Gi"),
+				v1.ResourceStorage: resource.MustParse(m.Spec.Capacity),
 			},
 			VolumeMode:                    &fsVolumeMode,
 			StorageClassName:              sc.Name,
@@ -315,4 +337,17 @@ func containsExportPath(exports []nfsclient.Export, searchString string) bool {
 		}
 	}
 	return false
+}
+
+func (r *NfsReconciler) expandVolume(ctx context.Context, pv *v1.PersistentVolume, newSize resource.Quantity) error {
+	// Implement the logic to expand the volume
+	// .....
+
+	// After expanding the volume, update the PV size
+	pv.Spec.Capacity[v1.ResourceStorage] = newSize
+	err := r.Update(ctx, pv)
+	if err != nil {
+		return err
+	}
+	return nil
 }

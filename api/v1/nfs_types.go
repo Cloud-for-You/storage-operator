@@ -38,6 +38,11 @@ type NfsSpec struct {
 	// Foo is an example field of Nfs. Edit nfs_types.go to remove/update
 	Server string `json:"server"`
 	Path   string `json:"path"`
+	//Capacity must follow the Kubernetes resource quantity format
+	//Example: 10Gi, 500Mi, etc.
+	//+kubebuilder:validation:Pattern=`^([0-9]+)(Ei|Pi|Ti|Gi|Mi|Ki|e|p|t|g|m|k)?$`
+	//+kubebuilder:default:="1Gi"
+	Capacity string `json:"capacity,omitempty"`
 }
 
 // NfsStatus defines the observed state of Nfs
@@ -53,7 +58,9 @@ type NfsStatus struct {
 //+kubebuilder:subresource:status
 //+kubebuilder:printcolumn:name="STATUS",type=string,JSONPath=`.status.phase`
 //+kubebuilder:printcolumn:name="CLAIM",type=string,JSONPath=`.status.pvcName`
+//+kubebuilder:printcolumn:name="CAPACITY",type=string,JSONPath=`.spec.capacity`
 //+kubebuilder:printcolumn:name="AGE",type="date",JSONPath=".metadata.creationTimestamp"
+//+kubebuilder:printcolumn:name="MESSAGE",type=string,JSONPath=`.status.message`
 
 // Nfs is the Schema for the nfs API
 type Nfs struct {
