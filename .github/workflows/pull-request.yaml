@@ -7,14 +7,20 @@ on:
     branches:
       - main
 
+permissions:
+  contents: read
+
 jobs:
-  pull-request:
-    name: policy
+  golangci:
+    name: linting
     runs-on: ubuntu-latest
     steps:
-      - name: test
-        run: |
-          echo "Test create pull-request"
-
-
-    
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+          cache: false
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: v1.58
