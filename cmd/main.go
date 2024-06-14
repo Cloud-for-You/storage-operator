@@ -16,6 +16,8 @@ limitations under the License.
 
 package main
 
+// Zde je validne opravena blbost
+
 import (
 	"crypto/tls"
 	"flag"
