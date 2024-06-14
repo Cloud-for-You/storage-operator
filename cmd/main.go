@@ -16,7 +16,7 @@ limitations under the License.
 
 package main
 
-Zde je nejaka blbost, ktera byla opravena dodatecne
+// Zde je nejaka blbost, ktera byla opravena dodatecne
 
 import (
 	"crypto/tls"
