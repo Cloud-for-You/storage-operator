@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.1](https://github.com/Cloud-for-You/storage-operator/compare/v1.4.0...v1.4.1) (2024-06-14)
+
+
+### Bug Fixes
+
+* **linting:** Oprava cistoty kodu a otestovani pomoci golint ([#25](https://github.com/Cloud-for-You/storage-operator/issues/25)) ([5ffc7af](https://github.com/Cloud-for-You/storage-operator/commit/5ffc7af9bfcf7973ab64e1474acba1b0c74107db))
+
 ## [1.4.0](https://github.com/Cloud-for-You/storage-operator/compare/v1.3.0...v1.4.0) (2024-06-13)
 
 
