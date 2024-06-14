@@ -13,6 +13,7 @@ import (
 
 	"github.com/Cloud-for-You/storage-operator/pkg/nfsclient/rpc"
 	"github.com/Cloud-for-You/storage-operator/pkg/nfsclient/util"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 const (
@@ -225,7 +226,11 @@ func DialService(addr string, prog rpc.Mapping) (*rpc.Client, error) {
 		util.Errorf("Failed to connect to portmapper: %s", err)
 		return nil, err
 	}
-	defer pm.Close()
+	defer func() {
+		if err := pm.Close(); err != nil {
+			log.Log.Error(err, "Failed to close pm")
+		}
+	}()
 
 	port, err := pm.Getport(prog)
 	if err != nil {

@@ -9,6 +9,8 @@ import (
 	"net"
 	"sync"
 	"time"
+
+	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 type tcpTransport struct {
@@ -26,7 +28,9 @@ func (t *tcpTransport) recv() (io.ReadSeeker, error) {
 	defer t.rlock.Unlock()
 	if t.timeout != 0 {
 		deadline := time.Now().Add(t.timeout)
-		t.wc.SetReadDeadline(deadline)
+		if err := t.wc.SetReadDeadline(deadline); err != nil {
+			log.Log.Error(err, "Failed to set read deadline")
+		}
 	}
 
 	var hdr uint32
@@ -51,7 +55,9 @@ func (t *tcpTransport) Write(buf []byte) (int, error) {
 	binary.BigEndian.PutUint32(b, hdr)
 	if t.timeout != 0 {
 		deadline := time.Now().Add(t.timeout)
-		t.wc.SetWriteDeadline(deadline)
+		if err := t.wc.SetWriteDeadline(deadline); err != nil {
+			log.Log.Error(err, "Failed to set write deadline")
+		}
 	}
 	n, err := t.wc.Write(append(b, buf...))
 
@@ -66,6 +72,8 @@ func (t *tcpTransport) SetTimeout(d time.Duration) {
 	t.timeout = d
 	if d == 0 {
 		var zeroTime time.Time
-		t.wc.SetDeadline(zeroTime)
+		if err := t.wc.SetDeadline(zeroTime); err != nil {
+			log.Log.Error(err, "Failed to set deadline")
+		}
 	}
 }

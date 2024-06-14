@@ -112,7 +112,7 @@ func (v *Target) Lookup(p string) (os.FileInfo, []byte, error) {
 		fh    = v.fh
 	)
 
-	// desecend down a path heirarchy to get the last elem's fh
+	// desecend down a path hierarchy to get the last elem's fh
 	dirents := strings.Split(path.Clean(p), "/")
 	for _, dirent := range dirents {
 		// we're assuming the root is always the root of the mount

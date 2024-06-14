@@ -18,6 +18,7 @@ package controller
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"time"
 
@@ -109,7 +110,7 @@ func (r *NfsReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 			// Nastavime status Nfs objektu
 			statusUpdate := storagev1.NfsStatus{
 				Phase:   "Error",
-				Message: "Unable to dial MOUNT service.",
+				Message: err.Error(),
 			}
 			nfs.Status = statusUpdate
 			if err := r.Status().Update(ctx, nfs); err != nil {
@@ -117,14 +118,19 @@ func (r *NfsReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 			}
 			return ctrl.Result{}, nil
 		}
-		defer mount.Close()
+		defer func() {
+			if err := mount.Close(); err != nil {
+				fmt.Printf("Chyba při zavírání mount: %v\n", err)
+			}
+		}()
+
 		AllNfsExports, err := mount.Exports()
 		if err != nil {
 			log.Error(err, "unable to export volumes")
 			// Nastavime status Nfs objektu
 			statusUpdate := storagev1.NfsStatus{
 				Phase:   "Error",
-				Message: "Unable to export volumes.",
+				Message: err.Error(),
 			}
 			nfs.Status = statusUpdate
 			if err := r.Status().Update(ctx, nfs); err != nil {
@@ -151,7 +157,11 @@ func (r *NfsReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 	foundPVC := &v1.PersistentVolumeClaim{}
 	err = r.Get(ctx, types.NamespacedName{Name: nfs.Name, Namespace: nfs.Namespace}, foundPVC)
 	if err != nil && errors.IsNotFound(err) {
-		pvc := r.pvcForNfs(nfs)
+		pvc, err := r.pvcForNfs(nfs)
+		if err != nil {
+			log.Error(err, "Failed to create new PVC", "PVC.Namespace", pvc.Namespace, "PVC.Name", pvc.Name)
+			return ctrl.Result{}, err
+		}
 		log.Info("Creating a new PVC", "PVC.Namespace", pvc.Namespace, "PVC.Name", pvc.Name)
 		err = r.Create(ctx, pvc)
 		if err != nil {
@@ -203,11 +213,9 @@ func (r *NfsReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 		if err != nil {
 			return ctrl.Result{Requeue: true}, nil
 		}
-		var pvcName = foundPVC.Name
-		var pvcPhase = foundPVC.Status.Phase
 		statusUpdate := storagev1.NfsStatus{
-			PVCName: string(pvcName),
-			Phase:   string(pvcPhase),
+			PVCName: foundPVC.Name,
+			Phase:   string(foundPVC.Status.Phase),
 		}
 		nfs.Status = statusUpdate
 		if err := r.Status().Update(ctx, nfs); err != nil {
@@ -219,7 +227,7 @@ func (r *NfsReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 	return ctrl.Result{}, nil
 }
 
-func (r *NfsReconciler) pvcForNfs(m *storagev1.Nfs) *v1.PersistentVolumeClaim {
+func (r *NfsReconciler) pvcForNfs(m *storagev1.Nfs) (*v1.PersistentVolumeClaim, error) {
 	sc, err := sc.GetStorageClass("nfs")
 	if err != nil {
 		log.Log.Error(err, "not found storageclass")
@@ -236,15 +244,18 @@ func (r *NfsReconciler) pvcForNfs(m *storagev1.Nfs) *v1.PersistentVolumeClaim {
 			AccessModes: []v1.PersistentVolumeAccessMode{v1.ReadWriteMany},
 			Resources: v1.VolumeResourceRequirements{
 				Requests: v1.ResourceList{
-					v1.ResourceName(v1.ResourceStorage): resource.MustParse("1Gi"),
+					v1.ResourceStorage: resource.MustParse("1Gi"),
 				},
 			},
 			StorageClassName: &sc.Name,
 			VolumeName:       m.Namespace + "-" + m.Name,
 		},
 	}
-	ctrl.SetControllerReference(m, pvc, r.Scheme)
-	return pvc
+	if err := ctrl.SetControllerReference(m, pvc, r.Scheme); err != nil {
+		log.Log.Error(err, "Failed to set controller reference")
+		return nil, fmt.Errorf("failed to set controller reference")
+	}
+	return pvc, nil
 }
 
 func (r *NfsReconciler) pvForNfs(m *storagev1.Nfs) *v1.PersistentVolume {
@@ -260,7 +271,7 @@ func (r *NfsReconciler) pvForNfs(m *storagev1.Nfs) *v1.PersistentVolume {
 		Spec: v1.PersistentVolumeSpec{
 			AccessModes: []v1.PersistentVolumeAccessMode{v1.ReadWriteMany},
 			Capacity: v1.ResourceList{
-				v1.ResourceName(v1.ResourceStorage): resource.MustParse("1Gi"),
+				v1.ResourceStorage: resource.MustParse("1Gi"),
 			},
 			VolumeMode:                    &fsVolumeMode,
 			StorageClassName:              sc.Name,
@@ -279,12 +290,11 @@ func (r *NfsReconciler) pvForNfs(m *storagev1.Nfs) *v1.PersistentVolume {
 			},
 		},
 	}
-	ctrl.SetControllerReference(m, pv, r.Scheme)
 	return pv
 }
 
 func (r *NfsReconciler) finalizeNfs(m *storagev1.Nfs) error {
-	log.Log.Info("Successfuly finalize nfs")
+	log.Log.Info("Successfully finalize nfs")
 	return nil
 }
 
