@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/Cloud-for-You/storage-operator/pkg/nfsclient/xdr"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 type Auth struct {
@@ -39,7 +40,9 @@ func NewAuthUnix(machinename string, uid, gid uint32) *AuthUnix {
 // Auth converts a into an Auth opaque struct
 func (a AuthUnix) Auth() Auth {
 	w := new(bytes.Buffer)
-	xdr.Write(w, a)
+	if err := xdr.Write(w, a); err != nil {
+		log.Log.Error(err, "Failed to write XDR data")
+	}
 	return Auth{
 		1,
 		w.Bytes(),

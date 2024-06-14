@@ -163,10 +163,7 @@ func (m *Mount) Exports() ([]Export, error) {
 		log.Fatalf("Error reading data: %v", err)
 	}
 	// Extrahujeme data z dekodovanych dat do type []Export
-	exports, err := extractExports(decodedData)
-	if err != nil {
-		log.Fatalf("Error extracting data: %v", err)
-	}
+	exports := extractExports(decodedData)
 	return exports, nil
 }
 
@@ -200,25 +197,19 @@ func readData(rs io.ReadSeeker) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-// Funkce pro extrakci adresářů z byte slice
-func extractExports(data []byte) ([]Export, error) {
+func extractExports(data []byte) []Export {
 	var exports []Export
 	var currentExport *Export
-	// Procházet byte slice a hledat adresáře
 	parts := bytes.Split(data, []byte{0})
 	for _, part := range parts {
-		// Převést byte slice na string a trimnout whitespace
 		str := strings.TrimSpace(string(part))
-		// Přidat do seznamu exportů, pokud není prázdný a není [1]
 		if len(str) > 0 && !bytes.Equal([]byte(str), []byte{1}) {
 			str = removeNonPrintableChars(str)
 			if _, _, err := net.ParseCIDR(str); err == nil || net.ParseIP(str) != nil {
-				// Jedná se o IP adresu nebo rozsah
 				if currentExport != nil {
 					currentExport.Groups = append(currentExport.Groups, str)
 				}
 			} else {
-				// Není IP adresa ani rozsah, je to adresář
 				if currentExport != nil {
 					exports = append(exports, *currentExport)
 				}
@@ -234,7 +225,7 @@ func extractExports(data []byte) ([]Export, error) {
 		exports = append(exports, *currentExport)
 	}
 
-	return exports, nil
+	return exports
 }
 
 func removeNonPrintableChars(str string) string {
