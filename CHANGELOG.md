@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.0](https://github.com/Cloud-for-You/storage-operator/compare/v1.4.1...v1.5.0) (2024-06-15)
+
+
+### Features
+
+* Implementace resizeru ([#32](https://github.com/Cloud-for-You/storage-operator/issues/32)) ([08242b6](https://github.com/Cloud-for-You/storage-operator/commit/08242b67aaaddf29c085a893cf64be2022c10739))
+
 ## [1.4.1](https://github.com/Cloud-for-You/storage-operator/compare/v1.4.0...v1.4.1) (2024-06-14)
 
 
