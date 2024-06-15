@@ -36,12 +36,16 @@ type NfsSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 
 	// Foo is an example field of Nfs. Edit nfs_types.go to remove/update
+	// +kubebuilder:validation:Required
+	// +kubebuilder:subresource:status
 	Server string `json:"server"`
-	Path   string `json:"path"`
-	//Capacity must follow the Kubernetes resource quantity format
-	//Example: 10Gi, 500Mi, etc.
-	//+kubebuilder:validation:Pattern=`^([0-9]+)(Ei|Pi|Ti|Gi|Mi|Ki|e|p|t|g|m|k)?$`
-	//+kubebuilder:default:="1Gi"
+	// +kubebuilder:validation:Required
+	// +kubebuilder:subresource:status
+	Path string `json:"path"`
+	// Capacity must follow the Kubernetes resource quantity format
+	// Example: 10Gi, 500Mi, etc.
+	// +kubebuilder:validation:Pattern=`^([0-9]+)(Ei|Pi|Ti|Gi|Mi|Ki|e|p|t|g|m|k)?$`
+	// +kubebuilder:default:="1Gi"
 	Capacity string `json:"capacity,omitempty"`
 }
 

@@ -104,46 +104,13 @@ func (r *NfsReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 
 	// Verify the existence of spec.path on the Nfs server
 	if os.Getenv("CHECK_EXPORTPATH") == "true" {
-		mount, err := nfsclient.DialMount(nfs.Spec.Server)
+		err := r.validateExportPath(nfs)
 		if err != nil {
-			log.Error(err, "unable to dial MOUNT service")
-			// Nastavime status Nfs objektu
+			// Nastavime error message v Nfs, kterou jsme ziskali z checkeru a posleme objekt do rekoncilace,
+			// ktera probehne napriklad za 20s
 			statusUpdate := storagev1.NfsStatus{
 				Phase:   "Error",
 				Message: err.Error(),
-			}
-			nfs.Status = statusUpdate
-			if err := r.Status().Update(ctx, nfs); err != nil {
-				log.Error(err, "Failed to update Nfs status")
-			}
-			return ctrl.Result{}, nil
-		}
-		defer func() {
-			if err := mount.Close(); err != nil {
-				fmt.Printf("Chyba při zavírání mount: %v\n", err)
-			}
-		}()
-
-		AllNfsExports, err := mount.Exports()
-		if err != nil {
-			log.Error(err, "unable to export volumes")
-			// Nastavime status Nfs objektu
-			statusUpdate := storagev1.NfsStatus{
-				Phase:   "Error",
-				Message: err.Error(),
-			}
-			nfs.Status = statusUpdate
-			if err := r.Status().Update(ctx, nfs); err != nil {
-				log.Error(err, "Failed to update Nfs status")
-			}
-			return ctrl.Result{}, nil
-		}
-
-		if !containsExportPath(AllNfsExports, nfs.Spec.Path) {
-			// Nastavime status na nejaky Error a zajistime novou rekoncilaci za cca 10s
-			statusUpdate := storagev1.NfsStatus{
-				Phase:   "Pending",
-				Message: "The NFS server does not export the specified directory " + nfs.Spec.Path + ".",
 			}
 			nfs.Status = statusUpdate
 			if err := r.Status().Update(ctx, nfs); err != nil {
@@ -329,16 +296,6 @@ func (r *NfsReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-// funkce pro ověření přítomnosti exportovaneho Path
-func containsExportPath(exports []nfsclient.Export, searchString string) bool {
-	for _, export := range exports {
-		if export.Directory == searchString {
-			return true
-		}
-	}
-	return false
-}
-
 func (r *NfsReconciler) expandVolume(ctx context.Context, pv *v1.PersistentVolume, newSize resource.Quantity) error {
 	// Implement the logic to expand the volume
 	// .....
@@ -350,4 +307,37 @@ func (r *NfsReconciler) expandVolume(ctx context.Context, pv *v1.PersistentVolum
 		return err
 	}
 	return nil
+}
+
+func (r *NfsReconciler) validateExportPath(nfs *storagev1.Nfs) error {
+	mount, err := nfsclient.DialMount(nfs.Spec.Server)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err := mount.Close(); err != nil {
+			fmt.Printf("Chyba při zavírání mount: %v\n", err)
+		}
+	}()
+
+	AllNfsExports, err := mount.Exports()
+	if err != nil {
+		return err
+	}
+
+	if !containsExportPath(AllNfsExports, nfs.Spec.Path) {
+		return fmt.Errorf("NFS server does't export the specified directory " + nfs.Spec.Path)
+	}
+
+	return nil
+}
+
+// funkce pro ověření přítomnosti exportovaneho Path
+func containsExportPath(exports []nfsclient.Export, searchString string) bool {
+	for _, export := range exports {
+		if export.Directory == searchString {
+			return true
+		}
+	}
+	return false
 }
