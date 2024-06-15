@@ -21,9 +21,15 @@ spec:
     - jsonPath: .status.pvcName
       name: CLAIM
       type: string
+    - jsonPath: .spec.capacity
+      name: CAPACITY
+      type: string
     - jsonPath: .metadata.creationTimestamp
       name: AGE
       type: date
+    - jsonPath: .status.message
+      name: MESSAGE
+      type: string
     name: v1
     schema:
       openAPIV3Schema:
@@ -49,6 +55,13 @@ spec:
           spec:
             description: NfsSpec defines the desired state of Nfs
             properties:
+              capacity:
+                default: 1Gi
+                description: |-
+                  Capacity must follow the Kubernetes resource quantity format
+                  Example: 10Gi, 500Mi, etc.
+                pattern: ^([0-9]+)(Ei|Pi|Ti|Gi|Mi|Ki|e|p|t|g|m|k)?$
+                type: string
               path:
                 type: string
               server:

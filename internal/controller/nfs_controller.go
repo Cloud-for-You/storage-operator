@@ -104,46 +104,13 @@ func (r *NfsReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 
 	// Verify the existence of spec.path on the Nfs server
 	if os.Getenv("CHECK_EXPORTPATH") == "true" {
-		mount, err := nfsclient.DialMount(nfs.Spec.Server)
+		err := r.validateExportPath(nfs)
 		if err != nil {
-			log.Error(err, "unable to dial MOUNT service")
-			// Nastavime status Nfs objektu
+			// Nastavime error message v Nfs, kterou jsme ziskali z checkeru a posleme objekt do rekoncilace,
+			// ktera probehne napriklad za 20s
 			statusUpdate := storagev1.NfsStatus{
 				Phase:   "Error",
 				Message: err.Error(),
-			}
-			nfs.Status = statusUpdate
-			if err := r.Status().Update(ctx, nfs); err != nil {
-				log.Error(err, "Failed to update Nfs status")
-			}
-			return ctrl.Result{}, nil
-		}
-		defer func() {
-			if err := mount.Close(); err != nil {
-				fmt.Printf("Chyba při zavírání mount: %v\n", err)
-			}
-		}()
-
-		AllNfsExports, err := mount.Exports()
-		if err != nil {
-			log.Error(err, "unable to export volumes")
-			// Nastavime status Nfs objektu
-			statusUpdate := storagev1.NfsStatus{
-				Phase:   "Error",
-				Message: err.Error(),
-			}
-			nfs.Status = statusUpdate
-			if err := r.Status().Update(ctx, nfs); err != nil {
-				log.Error(err, "Failed to update Nfs status")
-			}
-			return ctrl.Result{}, nil
-		}
-
-		if !containsExportPath(AllNfsExports, nfs.Spec.Path) {
-			// Nastavime status na nejaky Error a zajistime novou rekoncilaci za cca 10s
-			statusUpdate := storagev1.NfsStatus{
-				Phase:   "Pending",
-				Message: "The NFS server does not export the specified directory " + nfs.Spec.Path + ".",
 			}
 			nfs.Status = statusUpdate
 			if err := r.Status().Update(ctx, nfs); err != nil {
@@ -189,6 +156,28 @@ func (r *NfsReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 	} else if err != nil {
 		log.Error(err, "Failed to get PV")
 		return ctrl.Result{}, err
+	}
+
+	// Test pro resizing
+	requestedSize := resource.MustParse(nfs.Spec.Capacity)
+	currentSize := foundPV.Spec.Capacity[v1.ResourceStorage]
+
+	if requestedSize.Cmp(currentSize) > 0 {
+		log.Info("Volume resizing")
+		if err := r.expandVolume(ctx, foundPV, requestedSize); err != nil {
+			log.Error(err, "Failed to expand volume")
+			return ctrl.Result{}, err
+		}
+		foundPVC.Status.Capacity[v1.ResourceStorage] = requestedSize
+		if err := r.Status().Update(ctx, foundPVC); err != nil {
+			log.Error(err, "Failed to update PVC status")
+			return ctrl.Result{}, err
+		}
+		foundPV.Spec.Capacity[v1.ResourceStorage] = requestedSize
+		if err := r.Update(ctx, foundPV); err != nil {
+			log.Error(err, "Failed to update PV")
+			return ctrl.Result{}, err
+		}
 	}
 
 	// Add finalizer for all CR
@@ -244,7 +233,7 @@ func (r *NfsReconciler) pvcForNfs(m *storagev1.Nfs) (*v1.PersistentVolumeClaim, 
 			AccessModes: []v1.PersistentVolumeAccessMode{v1.ReadWriteMany},
 			Resources: v1.VolumeResourceRequirements{
 				Requests: v1.ResourceList{
-					v1.ResourceStorage: resource.MustParse("1Gi"),
+					v1.ResourceStorage: resource.MustParse(m.Spec.Capacity),
 				},
 			},
 			StorageClassName: &sc.Name,
@@ -271,7 +260,7 @@ func (r *NfsReconciler) pvForNfs(m *storagev1.Nfs) *v1.PersistentVolume {
 		Spec: v1.PersistentVolumeSpec{
 			AccessModes: []v1.PersistentVolumeAccessMode{v1.ReadWriteMany},
 			Capacity: v1.ResourceList{
-				v1.ResourceStorage: resource.MustParse("1Gi"),
+				v1.ResourceStorage: resource.MustParse(m.Spec.Capacity),
 			},
 			VolumeMode:                    &fsVolumeMode,
 			StorageClassName:              sc.Name,
@@ -305,6 +294,42 @@ func (r *NfsReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Owns(&v1.PersistentVolumeClaim{}).
 		Owns(&v1.PersistentVolume{}).
 		Complete(r)
+}
+
+func (r *NfsReconciler) expandVolume(ctx context.Context, pv *v1.PersistentVolume, newSize resource.Quantity) error {
+	// Implement the logic to expand the volume
+	// .....
+
+	// After expanding the volume, update the PV size
+	pv.Spec.Capacity[v1.ResourceStorage] = newSize
+	err := r.Update(ctx, pv)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *NfsReconciler) validateExportPath(nfs *storagev1.Nfs) error {
+	mount, err := nfsclient.DialMount(nfs.Spec.Server)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err := mount.Close(); err != nil {
+			fmt.Printf("Chyba při zavírání mount: %v\n", err)
+		}
+	}()
+
+	AllNfsExports, err := mount.Exports()
+	if err != nil {
+		return err
+	}
+
+	if !containsExportPath(AllNfsExports, nfs.Spec.Path) {
+		return fmt.Errorf("NFS server does't export the specified directory " + nfs.Spec.Path)
+	}
+
+	return nil
 }
 
 // funkce pro ověření přítomnosti exportovaneho Path
