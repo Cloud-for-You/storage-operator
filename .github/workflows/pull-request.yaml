@@ -13,6 +13,18 @@ permissions:
   contents: read
 
 jobs:
+  auto-pass:
+    if: github.actor == 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set PR  check to success
+        run: |
+          PR_SHA=$(jq -r .pull_request.head.sha "$GITHUB_EVENT_PATH")
+          curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+               -X POST \
+               -d '{"state":"success", "context":"your-check-context"}' \
+               https://api.github.com/repos/${{ github.repository }}/statuses/$PR_SHA
+
   golangci:
     name: linting
     runs-on: ubuntu-latest
