@@ -16,6 +16,8 @@ limitations under the License.
 
 package main
 
+// Blbej radek, kterej budeme modifikovat
+
 import (
 	"crypto/tls"
 	"flag"
