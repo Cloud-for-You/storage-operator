@@ -1,8 +1,27 @@
 # storage-operator
-// TODO(user): Add simple overview of use/purpose
+Zjednodusuje vytvareni vazby PersistentVolumeClaim a PersistentVolume v k8s clusteru. Pro vytvoreni vazby postaci definovat CustomResource, ktery obsahuje popis, co se ma v danem namespace pripojit. 
 
 ## Description
-// TODO(user): An in-depth paragraph about your project and overview of use
+Momentalne umoznuje operator vazbu pouze pro NFS. Pro vytvoreni vazby postaci zapsat jednodychy zapis ve tvaru
+
+```yaml
+apiVersion: storage.cfy.cz/v1
+kind: Nfs
+metadata:
+  name: example-nfs
+  namespace: example
+spec:
+  server: 172.16.4.102
+  path: /volume1/nfs-exports
+  capacity: 1Gi
+```
+
+Controller podporuje overovani existence export path na NFS serveru. Pokud je pozadovana tato funkcionalita je mozne ji zapnout pomoci ENV promenne.
+
+Podporovane Environment promenne
+Promenna | Default | Popis
+---|---|---
+CHECK_EXPORTPATH | false | Zapne kontrolu existence NFS exportu na serveru
 
 ## Getting Started
 You’ll need a Kubernetes cluster to run against. You can use [KIND](https://sigs.k8s.io/kind) to get a local cluster for testing, or run against a remote cluster.
