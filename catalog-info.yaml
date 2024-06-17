@@ -1,0 +1,20 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: storage-operator
+  description: Kubernetes operator for provisioning PVC and PV in K8S cluster
+  annotations:
+    backstage.io/techdocs-ref: dir:.
+    backstage.io/kubernetes-id: storage-operator
+    backstage.io/kubernetes-namespace: storage-operator
+    github.com/project-slug: cloud-for-you/storage-operator
+    quay.io/repository-slug: cloud-for-you/storage-operator
+    pagerduty.com/integration-key: R03E3RF0B2OXYNK7Z0EMBKAXT7N1TFQR
+  tags:
+    - golang
+spec:
+  type: service
+  owner: "group:cfy-k8s-lab/sq001"
+  lifecycle: experimental
+  dependsOn:
+    - resource:default/k8s-c1
