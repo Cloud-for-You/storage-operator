@@ -12,9 +12,9 @@ metadata:
     pagerduty.com/integration-key: R03E3RF0B2OXYNK7Z0EMBKAXT7N1TFQR
   tags:
     - golang
+    - kubernetes-operator
 spec:
   type: service
-  owner: "group:cfy-k8s-lab/sq001"
-  lifecycle: experimental
-  dependsOn:
-    - resource:default/k8s-c1
+  owner: "user:default/hates52"
+  system: kubernetes
+  lifecycle: production
