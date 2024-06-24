@@ -24,9 +24,12 @@ import (
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	corev1 "k8s.io/api/core/v1"
 
 	storagev1 "github.com/Cloud-for-You/storage-operator/api/v1"
 )
@@ -66,7 +69,6 @@ var _ = Describe("Nfs Controller", func() {
 
 				nfsLookupKey := types.NamespacedName{Name: resourceName, Namespace: resourceNamespace}
 				createdNfs := &storagev1.Nfs{}
-
 				Eventually(func() bool {
 					err := k8sClient.Get(ctx, nfsLookupKey, createdNfs)
 					return err == nil
@@ -74,6 +76,7 @@ var _ = Describe("Nfs Controller", func() {
 				Expect(createdNfs.Spec.Capacity).Should(Equal("1Gi"))
 
 				// Zde provedeme samostatne testy
+				// Overime, ze po vytvoreni je stav objektu Nfs status.phase nastaveno na Pending
 				By("By checking the Nfs has status Pending")
 				Consistently(func() (string, error) {
 					err := k8sClient.Get(ctx, nfsLookupKey, createdNfs)
@@ -82,6 +85,31 @@ var _ = Describe("Nfs Controller", func() {
 					}
 					return (createdNfs.Status.Phase), nil
 				}, duration, interval).Should(Equal(storagev1.PhasePending))
+
+				// Overime, zda byl controllerem vytvoren objekt PVC a PV podle predem definovaneho jmena
+				By("By checking the PVC has created")
+				pvcLookupKey := types.NamespacedName{Name: resourceName, Namespace: resourceNamespace}
+				createdPvc := &corev1.PersistentVolumeClaim{}
+				Eventually(func() bool {
+					err := k8sClient.Get(ctx, pvcLookupKey, createdPvc)
+					return err == nil
+				}, timeout, interval).Should(BeTrue())
+				By("By checking the PV has created")
+				pvList := &corev1.PersistentVolumeList{}
+				Eventually(func() bool {
+					err := k8sClient.List(ctx, pvList, client.MatchingFields{"spec.claimRef.name": resourceName})
+					return err == nil && len(pvList.Items) > 0
+				}, timeout, interval).Should(BeTrue())
+
+				createdPv := pvList.Items[0]
+				Expect(createdPv.Spec.ClaimRef.Name).Should(Equal(resourceName))
+				Expect(createdPv.Spec.ClaimRef.Namespace).Should(Equal(resourceNamespace))
+
+				// Overime, ze stav objektu Nfs
+				// status.phase: Bound
+				// status.pvcName: <PVC name>
+				By("Checking the Nfs status after ending reconcilation")
+
 			}
 		})
 
