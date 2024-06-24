@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.1](https://github.com/Cloud-for-You/storage-operator/compare/v1.5.0...v1.5.1) (2024-06-24)
+
+
+### Bug Fixes
+
+* **main:** Dev/nfs status ([#53](https://github.com/Cloud-for-You/storage-operator/issues/53)) ([81c0fc7](https://github.com/Cloud-for-You/storage-operator/commit/81c0fc7943733d39b33278cb8cef3bcd204731d8))
+
 ## [1.5.0](https://github.com/Cloud-for-You/storage-operator/compare/v1.4.1...v1.5.0) (2024-06-15)
 
 
