@@ -65,8 +65,6 @@ spec:
               path:
                 type: string
               server:
-                description: Foo is an example field of Nfs. Edit nfs_types.go to
-                  remove/update
                 type: string
             required:
             - path

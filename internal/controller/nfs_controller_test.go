@@ -18,6 +18,7 @@ package controller
 
 import (
 	"context"
+	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -32,13 +33,17 @@ import (
 
 var _ = Describe("Nfs Controller", func() {
 	Context("When reconciling a resource", func() {
-		const resourceName = "test-resource"
+		const resourceName = "test-nfs-resource"
+		const resourceNamespace = "default"
+		const timeout = time.Second * 10
+		const duration = time.Second * 10
+		const interval = time.Millisecond * 250
 
 		ctx := context.Background()
 
 		typeNamespacedName := types.NamespacedName{
 			Name:      resourceName,
-			Namespace: "default", // TODO(user):Modify as needed
+			Namespace: resourceNamespace,
 		}
 		nfs := &storagev1.Nfs{}
 
@@ -49,11 +54,34 @@ var _ = Describe("Nfs Controller", func() {
 				resource := &storagev1.Nfs{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      resourceName,
-						Namespace: "default",
+						Namespace: resourceNamespace,
 					},
 					// TODO(user): Specify other spec details if needed.
+					Spec: storagev1.NfsSpec{
+						Server: "localhost",
+						Path:   "/volume1/directory",
+					},
 				}
 				Expect(k8sClient.Create(ctx, resource)).To(Succeed())
+
+				nfsLookupKey := types.NamespacedName{Name: resourceName, Namespace: resourceNamespace}
+				createdNfs := &storagev1.Nfs{}
+
+				Eventually(func() bool {
+					err := k8sClient.Get(ctx, nfsLookupKey, createdNfs)
+					return err == nil
+				}, timeout, interval).Should(BeTrue())
+				Expect(createdNfs.Spec.Capacity).Should(Equal("1Gi"))
+
+				// Zde provedeme samostatne testy
+				By("By checking the Nfs has status Pending")
+				Consistently(func() (string, error) {
+					err := k8sClient.Get(ctx, nfsLookupKey, createdNfs)
+					if err != nil {
+						return "", err
+					}
+					return (createdNfs.Status.Phase), nil
+				}, duration, interval).Should(Equal(storagev1.PhasePending))
 			}
 		})
 
@@ -79,6 +107,11 @@ var _ = Describe("Nfs Controller", func() {
 			Expect(err).NotTo(HaveOccurred())
 			// TODO(user): Add more specific assertions depending on your controller's reconciliation logic.
 			// Example: If you expect a certain status condition after reconciliation, verify it here.
+
+			// Verify the Nfs resource spec.capacity and status.phase
+			fetchedNfsResource := &storagev1.Nfs{}
+			Expect(k8sClient.Get(ctx, typeNamespacedName, fetchedNfsResource)).To(Succeed())
+			Expect(fetchedNfsResource.Spec.Capacity).To(Equal("1Gi"))
 		})
 	})
 })
