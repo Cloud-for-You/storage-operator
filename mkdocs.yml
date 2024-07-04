@@ -1,8 +1,8 @@
 site_name: 'storage-operator'
 
 nav:
-  - Home: docs/index.md
-  - Deployment: docs/deployment.md
+  - Home: index.md
+  - Deployment: deployment.md
 
 plugins:
   - techdocs-core
