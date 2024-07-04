@@ -4,7 +4,7 @@ metadata:
   name: storage-operator
   description: Kubernetes operator for provisioning PVC and PV in K8S cluster
   annotations:
-    backstage.io/techdocs-ref: dir:.
+    backstage.io/techdocs-ref: dir:docs
     backstage.io/kubernetes-id: storage-operator
     backstage.io/kubernetes-namespace: storage-operator
     github.com/project-slug: cloud-for-you/storage-operator
