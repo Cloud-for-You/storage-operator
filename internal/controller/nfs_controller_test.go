@@ -18,13 +18,13 @@ package controller
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -95,13 +95,19 @@ var _ = Describe("Nfs Controller", func() {
 					return err == nil
 				}, timeout, interval).Should(BeTrue())
 				By("By checking the PV has created")
-				pvList := &corev1.PersistentVolumeList{}
+				pvLookupKey := types.NamespacedName{Name: resourceNamespace + "-" + resourceName}
+				createdPv := &corev1.PersistentVolume{}
 				Eventually(func() bool {
-					err := k8sClient.List(ctx, pvList, client.MatchingFields{"spec.claimRef.name": resourceName})
-					return err == nil && len(pvList.Items) > 0
+					err := k8sClient.Get(ctx, pvLookupKey, createdPv)
+					if err != nil {
+						fmt.Println("Error getting PVs:", err)
+						return false
+					}
+					return createdPv.Spec.ClaimRef != nil &&
+						createdPv.Spec.ClaimRef.Name == resourceName &&
+						createdPv.Spec.ClaimRef.Namespace == resourceNamespace
 				}, timeout, interval).Should(BeTrue())
 
-				createdPv := pvList.Items[0]
 				Expect(createdPv.Spec.ClaimRef.Name).Should(Equal(resourceName))
 				Expect(createdPv.Spec.ClaimRef.Namespace).Should(Equal(resourceNamespace))
 
