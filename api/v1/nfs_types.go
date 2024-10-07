@@ -24,10 +24,12 @@ import (
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
 const (
-	PhasePending = "Pending"
-	PhaseBound   = "Bound"
-	PhaseUnknown = "Unknown"
-	PhaseError   = "Error"
+	PhasePending        = "Pending"
+	PhaseBound          = "Bound"
+	PhaseUnknown        = "Unknown"
+	PhaseError          = "Error"
+	AutomationCompleted = "Completed"
+	AutomationError     = "Error"
 )
 
 // NfsSpec defines the desired state of Nfs
@@ -52,9 +54,10 @@ type NfsSpec struct {
 type NfsStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-	Phase   string `json:"phase,omitempty"`
-	PVCName string `json:"pvcName,omitempty"`
-	Message string `json:"message,omitempty"`
+	Phase      string `json:"phase,omitempty"`
+	PVCName    string `json:"pvcName,omitempty"`
+	Automation string `json:"automation,omitempty"`
+	Message    string `json:"message,omitempty"`
 }
 
 //+kubebuilder:object:root=true
