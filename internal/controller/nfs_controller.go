@@ -35,6 +35,7 @@ import (
 
 	storagev1 "github.com/Cloud-for-You/storage-operator/api/v1"
 	"github.com/Cloud-for-You/storage-operator/pkg/nfsclient"
+	"github.com/Cloud-for-You/storage-operator/pkg/provisioner"
 	sc "github.com/Cloud-for-You/storage-operator/pkg/storageclass"
 	"github.com/go-logr/logr"
 )
@@ -104,32 +105,13 @@ func (r *NfsReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 
 	// Update status to Pending
 	if nfs.Status.Phase == "" {
-		statusUpdate := storagev1.NfsStatus{
-			Phase: storagev1.PhasePending,
-		}
-		nfs.Status = statusUpdate
+		nfs.Status.Phase = string(storagev1.PhasePending)
 		if err := r.Status().Update(ctx, nfs); err != nil {
 			log.Error(err, "Failed to update Nfs status")
 		}
 	}
 
-	// Verify the existence of spec.path on the Nfs server
-	if os.Getenv("CHECK_EXPORTPATH") == "true" {
-		err := r.validateExportPath(nfs)
-		if err != nil {
-			// Nastavime error message v Nfs, kterou jsme ziskali z checkeru a posleme objekt do rekoncilace,
-			// ktera probehne napriklad za 20s
-			statusUpdate := storagev1.NfsStatus{
-				Phase:   "Error",
-				Message: err.Error(),
-			}
-			nfs.Status = statusUpdate
-			if err := r.Status().Update(ctx, nfs); err != nil {
-				log.Error(err, "Failed to update Nfs status")
-			}
-			return ctrl.Result{RequeueAfter: 10 * time.Second}, nil
-		}
-	}
+
 
 	// Create/Update/Delete PersistentVolumeClaim
 	foundPVC := &v1.PersistentVolumeClaim{}
@@ -156,7 +138,47 @@ func (r *NfsReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 	foundPV := &v1.PersistentVolume{}
 	err = r.Get(ctx, types.NamespacedName{Name: nfs.Namespace + "-" + nfs.Name, Namespace: ""}, foundPV)
 	if err != nil && errors.IsNotFound(err) {
-		pv := r.pvForNfs(nfs)
+		// Provolani automatizace za predpokladu, ze je na provisioner automatizace zapnuta
+		// Get provisioner and parameters from StorageClass
+		storageClass, err := sc.GetStorageClass("nfs")
+		if err != nil {
+			log.Error(err, "not found storageclass")
+		}
+		if !provisioner.ValidProvisioners.Contains(storageClass.Provisioner) {
+			err = fmt.Errorf("provisioner '%s' is not supported", storageClass.Provisioner)
+			log.Error(err, "Provisioner is not supported")
+			return ctrl.Result{}, err
+		} else {
+			// Provedeme automatizaci pouze za podminky, ze jeste nebyla provedena
+			// Overujeme status.automation zdali nabyva hodnoty storagev1.AutomationCompleted
+			// Pokud teto hodnoty nenabyva automatizaci spustime v rekoncilaci jinak ji preskocime 
+			if nfs.Status.Automation != storagev1.AutomationCompleted {
+			  log.Info("Provedeme automatizaci")
+				// Samostatny kod pro automatizaci
+			  nfs.Status.Automation = string(storagev1.AutomationCompleted)
+			  if err := r.Status().Update(ctx, nfs); err != nil {
+	    		log.Error(err, "Failed to update Nfs status")
+	    	}
+			}
+		}
+		// Overeni ze existuje export path na NFS serveru
+	  // Verify the existence of spec.path on the Nfs server
+	  if os.Getenv("CHECK_EXPORTPATH") == "true" {
+	  	log.Info("Validate existing nfs export in NFS server")
+	  	err := r.validateExportPath(nfs)
+	  	if err != nil {
+	  		// Nastavime error message v Nfs, kterou jsme ziskali z checkeru a posleme objekt do rekoncilace,
+	  		// ktera probehne napriklad za 20s
+				nfs.Status.Phase = "Error"
+				nfs.Status.Message = err.Error()
+	  		if err := r.Status().Update(ctx, nfs); err != nil {
+	  			log.Error(err, "Failed to update Nfs status")
+	  		}
+	  		return ctrl.Result{RequeueAfter: 10 * time.Second}, nil
+	  	}
+	  }
+
+    pv := r.pvForNfs(nfs)
 		log.Info("Creating a new PV", "PV.Name", pv.Name)
 		err = r.Create(ctx, pv)
 		if err != nil {
@@ -206,26 +228,20 @@ func (r *NfsReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 		if err != nil {
 			return ctrl.Result{Requeue: true}, nil
 		}
-		statusUpdate := storagev1.NfsStatus{
-			PVCName: foundPVC.Name,
-			Phase:   string(foundPVC.Status.Phase),
-		}
-		nfs.Status = statusUpdate
+		nfs.Status.Phase = string(foundPVC.Status.Phase)
+		nfs.Status.PVCName = foundPVC.Name
 		if err := r.Status().Update(ctx, nfs); err != nil {
 			log.Error(err, "Failed to update Nfs status")
 			return ctrl.Result{Requeue: true}, nil
 		}
 	}
-
+	
 	return ctrl.Result{}, nil
 
 }
 
 func (r *NfsReconciler) pvcForNfs(m *storagev1.Nfs) (*v1.PersistentVolumeClaim, error) {
 	sc, err := sc.GetStorageClass("nfs")
-	if err != nil {
-		log.Log.Error(err, "not found storageclass")
-	}
 	if err != nil {
 		log.Log.Error(err, "not found storageclass")
 	}
