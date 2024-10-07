@@ -1,4 +1,3 @@
----
 apiVersion: storage.cfy.cz/v1
 kind: Nfs
 metadata:
