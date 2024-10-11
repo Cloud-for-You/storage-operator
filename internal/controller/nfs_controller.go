@@ -174,7 +174,7 @@ func (r *NfsReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 						}
 						return ctrl.Result{}, err
 					}
-					// Definujte data a parametry pro spuštění jobu (pokud nějaké máte) a spusti samotny job
+					// Definujte data a parametry pro spusteni jobu (pokud nejake mate) a spusti samotny job
 					data := map[string]interface{}{
 						"limit": storageClass.Parameters["hosts"],
 					}
@@ -196,7 +196,9 @@ func (r *NfsReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 					if err := r.Status().Update(ctx, nfs); err != nil {
 						log.Error(err, "Failed to update Nfs status")
 					}
-					return ctrl.Result{RequeueAfter: 10 * time.Second}, nil
+					// Zde vytvorime podminku, ktera bude skipovat rekoncilaci dokud bude automatizace ve stavu Running
+					// To musime overovat dotazovanim na AWX tower
+					//return ctrl.Result{RequeueAfter: 10 * time.Second}, nil
 				}
 				nfs.Status.Automation = string(storagev1.AutomationCompleted)
 				if err := r.Status().Update(ctx, nfs); err != nil {
