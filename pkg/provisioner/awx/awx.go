@@ -3,6 +3,7 @@ package awx
 import (
 	"fmt"
 	"net/http"
+	"os"
 	"time"
 
 	tower "github.com/Kaginari/ansible-tower-sdk/client"
@@ -28,15 +29,24 @@ func NewAWXClient(baseURL, username, password string) (*AWXClient, error) {
 }
 
 // LaunchJobTemplate launches a job template by its ID
-func (a *AWXClient) LaunchJobTemplate(jobTemplateID int, data map[string]interface{}, params map[string]string) (int, error) {
-	jobTemplateService := a.Client.JobTemplateService
+func LaunchJobTemplate(jtid int, data map[string]interface{}) (*tower.JobLaunch, error) {
+	endpoint := os.Getenv("AWX_URL")
+	username := os.Getenv("AWX_USERNAME")
+	password := os.Getenv("AWX_PASSWORD")
 
-	launch, err := jobTemplateService.Launch(jobTemplateID, data, params)
+	params := make(map[string]string)
+
+	client, err := NewAWXClient(endpoint, username, password)
 	if err != nil {
-		return 0, fmt.Errorf("failed to launch job template: %w", err)
+		return nil, err
 	}
 
-	return launch.ID, nil
+	jobLaunch, err := client.Client.JobTemplateService.Launch(jtid, data, params)
+	if err != nil {
+		return nil, err
+	}
+
+	return jobLaunch, nil
 }
 
 /*

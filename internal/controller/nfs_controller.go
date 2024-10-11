@@ -18,11 +18,10 @@ package controller
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"regexp"
-	"strconv"
-	"strings"
 	"time"
 
 	v1 "k8s.io/api/core/v1"
@@ -39,7 +38,6 @@ import (
 	storagev1 "github.com/Cloud-for-You/storage-operator/api/v1"
 	"github.com/Cloud-for-You/storage-operator/pkg/nfsclient"
 	"github.com/Cloud-for-You/storage-operator/pkg/provisioner"
-	"github.com/Cloud-for-You/storage-operator/pkg/provisioner/awx"
 	sc "github.com/Cloud-for-You/storage-operator/pkg/storageclass"
 	"github.com/go-logr/logr"
 )
@@ -146,66 +144,47 @@ func (r *NfsReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 		if err != nil {
 			log.Error(err, "not found storageclass")
 		}
-		if !provisioner.ValidProvisioners.Contains(storageClass.Provisioner) {
-			err = fmt.Errorf("provisioner '%s' is not supported", storageClass.Provisioner)
-			log.Error(err, "Provisioner is not supported")
-			return ctrl.Result{}, err
-		} else {
-			automationType := regexp.MustCompile(`[^/]+$`).FindString(storageClass.Provisioner)
-			// Provedeme automatizaci pouze za podminky, ze jeste nebyla provedena
-			// Overujeme status.automation zdali nabyva hodnoty storagev1.AutomationCompleted
-			// Pokud teto hodnoty nenabyva automatizaci spustime v rekoncilaci jinak ji preskocime
-			if nfs.Status.Automation != storagev1.AutomationCompleted {
-				log.Info("Run automation")
-				// Samostatny kod pro automatizaci
-				switch automationType {
-				case "awx":
-					fmt.Println("Automatizace pomoci Ansible Tower")
-					endpoint := os.Getenv(strings.ToUpper(automationType) + "_URL")
-					username := os.Getenv(strings.ToUpper(automationType) + "_USERNAME")
-					password := os.Getenv(strings.ToUpper(automationType) + "_PASSWORD")
-					client, err := awx.NewAWXClient(endpoint, username, password)
-					if err != nil {
-						log.Error(err, "Failed to create AWX client")
-						nfs.Status.Automation = string(storagev1.AutomationError)
-						nfs.Status.Message = err.Error()
-						if err := r.Status().Update(ctx, nfs); err != nil {
-							log.Error(err, "Failed to update Nfs status")
-						}
-						return ctrl.Result{}, err
-					}
-					// Definujte data a parametry pro spusteni jobu (pokud nejake mate) a spusti samotny job
-					data := map[string]interface{}{
-						"limit": storageClass.Parameters["hosts"],
-					}
-					params := map[string]string{}
-					jobTemplateID, _ := strconv.Atoi(storageClass.Parameters["job_template_id"])
-					jobId, err := client.LaunchJobTemplate(jobTemplateID, data, params)
-					if err != nil {
-						log.Error(err, "Failed to launch job template")
-						nfs.Status.Automation = string(storagev1.AutomationError)
-						nfs.Status.Message = err.Error()
-						if err := r.Status().Update(ctx, nfs); err != nil {
-							log.Error(err, "Failed to update Nfs status")
-						}
-						return ctrl.Result{}, err
-					}
-					fmt.Printf("Job launched successfully with ID: %d\n", jobId)
-					nfs.Status.Automation = string(storagev1.AutomationRunning)
-					nfs.Status.Message = ""
+		if automationType := regexp.MustCompile(`[^/]+$`).FindString(storageClass.Provisioner); automationType != "" {
+			if nfs.Status.Automation == "" {
+				// Spustime automatizaci
+				automationResult, err := provisioner.RunAutomation(automationType, storageClass.Parameters)
+				if err != nil {
+					nfs.Status.Automation = storagev1.AutomationError
+					nfs.Status.Message = err.Error()
 					if err := r.Status().Update(ctx, nfs); err != nil {
 						log.Error(err, "Failed to update Nfs status")
 					}
-					// Zde vytvorime podminku, ktera bude skipovat rekoncilaci dokud bude automatizace ve stavu Running
-					// To musime overovat dotazovanim na AWX tower
-					//return ctrl.Result{RequeueAfter: 10 * time.Second}, nil
+					return ctrl.Result{RequeueAfter: 10 * time.Second}, err
 				}
-				nfs.Status.Automation = string(storagev1.AutomationCompleted)
+				if automationResult.Data["status"] == storagev1.AutomationRunning {
+					jsonData, _ := json.Marshal(automationResult.Data)
+					nfs.Status.Automation = storagev1.AutomationRunning
+					nfs.Status.Message = string(jsonData)
+					if err := r.Status().Update(ctx, nfs); err != nil {
+						log.Error(err, "Failed to update Nfs status")
+					}
+					return ctrl.Result{}, err
+				}
+			}
+			if nfs.Status.Automation == storagev1.AutomationRunning {
+				// Zde spustime Job pro ziskani stavu automatizace
+				validateResult, err := provisioner.ValidateAutomation(automationType, storageClass.Parameters)
+				if err != nil {
+					log.Error(err, "Failed validate automation")
+				}
+				if validateResult.Data["status"] != storagev1.AutomationCompleted {
+					return ctrl.Result{RequeueAfter: 10 * time.Second}, err
+				}
+				nfs.Status.Automation = storagev1.AutomationCompleted
 				if err := r.Status().Update(ctx, nfs); err != nil {
 					log.Error(err, "Failed to update Nfs status")
 				}
 			}
+			if nfs.Status.Automation != storagev1.AutomationCompleted {
+				return ctrl.Result{RequeueAfter: 10 * time.Second}, err
+			}
 		}
+
 		// Overeni ze existuje export path na NFS serveru
 		// Verify the existence of spec.path on the Nfs server
 		if os.Getenv("CHECK_EXPORTPATH") == "true" {
@@ -393,7 +372,7 @@ func (r *NfsReconciler) validateExportPath(nfs *storagev1.Nfs) error {
 	}
 
 	if !containsExportPath(AllNfsExports, nfs.Spec.Path) {
-		return fmt.Errorf("NFS server does't export the specified directory " + nfs.Spec.Path)
+		return fmt.Errorf("NFS server does't export the specified directory %s", nfs.Spec.Path)
 	}
 
 	return nil
