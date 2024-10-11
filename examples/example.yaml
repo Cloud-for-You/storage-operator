@@ -6,4 +6,3 @@ metadata:
 spec:
   server: 172.16.4.102
   path: /volume1/nfs-exports
-

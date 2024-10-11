@@ -30,6 +30,7 @@ const (
 	PhaseError          = "Error"
 	AutomationCompleted = "Completed"
 	AutomationError     = "Error"
+	AutomationRunning   = "Running"
 )
 
 // NfsSpec defines the desired state of Nfs

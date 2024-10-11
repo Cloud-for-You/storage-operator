@@ -6,7 +6,8 @@ metadata:
   name: nfs
 provisioner: storage-operator.cfy.cz/awx
 parameters:
-  secretName: awx
+  job_template_id: "105"
+  hosts: "tvlsnfs01.pmb.cz"
 mountOptions:
   - nfsvers=4
   - hard

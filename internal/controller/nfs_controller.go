@@ -20,6 +20,9 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"regexp"
+	"strconv"
+	"strings"
 	"time"
 
 	v1 "k8s.io/api/core/v1"
@@ -36,6 +39,7 @@ import (
 	storagev1 "github.com/Cloud-for-You/storage-operator/api/v1"
 	"github.com/Cloud-for-You/storage-operator/pkg/nfsclient"
 	"github.com/Cloud-for-You/storage-operator/pkg/provisioner"
+	"github.com/Cloud-for-You/storage-operator/pkg/provisioner/awx"
 	sc "github.com/Cloud-for-You/storage-operator/pkg/storageclass"
 	"github.com/go-logr/logr"
 )
@@ -111,8 +115,6 @@ func (r *NfsReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 		}
 	}
 
-
-
 	// Create/Update/Delete PersistentVolumeClaim
 	foundPVC := &v1.PersistentVolumeClaim{}
 	err = r.Get(ctx, types.NamespacedName{Name: nfs.Name, Namespace: nfs.Namespace}, foundPVC)
@@ -149,36 +151,77 @@ func (r *NfsReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 			log.Error(err, "Provisioner is not supported")
 			return ctrl.Result{}, err
 		} else {
+			automationType := regexp.MustCompile(`[^/]+$`).FindString(storageClass.Provisioner)
 			// Provedeme automatizaci pouze za podminky, ze jeste nebyla provedena
 			// Overujeme status.automation zdali nabyva hodnoty storagev1.AutomationCompleted
-			// Pokud teto hodnoty nenabyva automatizaci spustime v rekoncilaci jinak ji preskocime 
+			// Pokud teto hodnoty nenabyva automatizaci spustime v rekoncilaci jinak ji preskocime
 			if nfs.Status.Automation != storagev1.AutomationCompleted {
-			  log.Info("Provedeme automatizaci")
+				log.Info("Run automation")
 				// Samostatny kod pro automatizaci
-			  nfs.Status.Automation = string(storagev1.AutomationCompleted)
-			  if err := r.Status().Update(ctx, nfs); err != nil {
-	    		log.Error(err, "Failed to update Nfs status")
-	    	}
+				switch automationType {
+				case "awx":
+					fmt.Println("Automatizace pomoci Ansible Tower")
+					endpoint := os.Getenv(strings.ToUpper(automationType) + "_URL")
+					username := os.Getenv(strings.ToUpper(automationType) + "_USERNAME")
+					password := os.Getenv(strings.ToUpper(automationType) + "_PASSWORD")
+					client, err := awx.NewAWXClient(endpoint, username, password)
+					if err != nil {
+						log.Error(err, "Failed to create AWX client")
+						nfs.Status.Automation = string(storagev1.AutomationError)
+						nfs.Status.Message = err.Error()
+						if err := r.Status().Update(ctx, nfs); err != nil {
+							log.Error(err, "Failed to update Nfs status")
+						}
+						return ctrl.Result{}, err
+					}
+					// Definujte data a parametry pro spuštění jobu (pokud nějaké máte) a spusti samotny job
+					data := map[string]interface{}{
+						"limit": storageClass.Parameters["hosts"],
+					}
+					params := map[string]string{}
+					jobTemplateID, _ := strconv.Atoi(storageClass.Parameters["job_template_id"])
+					jobId, err := client.LaunchJobTemplate(jobTemplateID, data, params)
+					if err != nil {
+						log.Error(err, "Failed to launch job template")
+						nfs.Status.Automation = string(storagev1.AutomationError)
+						nfs.Status.Message = err.Error()
+						if err := r.Status().Update(ctx, nfs); err != nil {
+							log.Error(err, "Failed to update Nfs status")
+						}
+						return ctrl.Result{}, err
+					}
+					fmt.Printf("Job launched successfully with ID: %d\n", jobId)
+					nfs.Status.Automation = string(storagev1.AutomationRunning)
+					nfs.Status.Message = ""
+					if err := r.Status().Update(ctx, nfs); err != nil {
+						log.Error(err, "Failed to update Nfs status")
+					}
+					return ctrl.Result{RequeueAfter: 10 * time.Second}, nil
+				}
+				nfs.Status.Automation = string(storagev1.AutomationCompleted)
+				if err := r.Status().Update(ctx, nfs); err != nil {
+					log.Error(err, "Failed to update Nfs status")
+				}
 			}
 		}
 		// Overeni ze existuje export path na NFS serveru
-	  // Verify the existence of spec.path on the Nfs server
-	  if os.Getenv("CHECK_EXPORTPATH") == "true" {
-	  	log.Info("Validate existing nfs export in NFS server")
-	  	err := r.validateExportPath(nfs)
-	  	if err != nil {
-	  		// Nastavime error message v Nfs, kterou jsme ziskali z checkeru a posleme objekt do rekoncilace,
-	  		// ktera probehne napriklad za 20s
+		// Verify the existence of spec.path on the Nfs server
+		if os.Getenv("CHECK_EXPORTPATH") == "true" {
+			log.Info("Validate existing nfs export in NFS server")
+			err := r.validateExportPath(nfs)
+			if err != nil {
+				// Nastavime error message v Nfs, kterou jsme ziskali z checkeru a posleme objekt do rekoncilace,
+				// ktera probehne napriklad za 20s
 				nfs.Status.Phase = "Error"
 				nfs.Status.Message = err.Error()
-	  		if err := r.Status().Update(ctx, nfs); err != nil {
-	  			log.Error(err, "Failed to update Nfs status")
-	  		}
-	  		return ctrl.Result{RequeueAfter: 10 * time.Second}, nil
-	  	}
-	  }
+				if err := r.Status().Update(ctx, nfs); err != nil {
+					log.Error(err, "Failed to update Nfs status")
+				}
+				return ctrl.Result{RequeueAfter: 10 * time.Second}, nil
+			}
+		}
 
-    pv := r.pvForNfs(nfs)
+		pv := r.pvForNfs(nfs)
 		log.Info("Creating a new PV", "PV.Name", pv.Name)
 		err = r.Create(ctx, pv)
 		if err != nil {
@@ -230,12 +273,13 @@ func (r *NfsReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 		}
 		nfs.Status.Phase = string(foundPVC.Status.Phase)
 		nfs.Status.PVCName = foundPVC.Name
+		nfs.Status.Message = ""
 		if err := r.Status().Update(ctx, nfs); err != nil {
 			log.Error(err, "Failed to update Nfs status")
 			return ctrl.Result{Requeue: true}, nil
 		}
 	}
-	
+
 	return ctrl.Result{}, nil
 
 }
