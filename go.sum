@@ -1,3 +1,5 @@
+github.com/Kaginari/ansible-tower-sdk v0.1.4 h1:DVJVRLsKGHrLb3OeHrpvn1L0w4Cv+HATfn45hCk2+p0=
+github.com/Kaginari/ansible-tower-sdk v0.1.4/go.mod h1:Dj/0K6L+RJ0WEMMEfL84EXWUgUCqkfu1utT3FVi+fIk=
 github.com/beorn7/perks v1.0.1 h1:VlbKKnNfV8bJzeqoa4cOKqO6bYr3WgKZxO8Z16+hsOM=
 github.com/beorn7/perks v1.0.1/go.mod h1:G2ZrVWU2WbWT9wwq4/hrbKbnv/1ERSJQ0ibhJ6rlkpw=
 github.com/cespare/xxhash/v2 v2.2.0 h1:DC2CZ1Ep5Y4k3ZQ899DldepgrayRUGE6BBZ/cd9Cj44=
