@@ -1,0 +1,55 @@
+---
+# tasks file for provisioning-nfs-export
+
+- name: Set LogicalVolume Name if OpenShift
+  set_fact:
+    lv_name: "{{ lv_prefix }}_{{ cluster_name }}_{{ namespace_name }}_{{ pvc_name }}"
+    lv_size: "{{ pvc_size }}"
+    mount_path: /nfs/{{ cluster_name }}/{{ namespace_name }}/{{ pvc_name }}
+  when:
+    - openshift
+
+- name: Create LV
+  lvol:
+    vg: "{{ vg_name }}"
+    lv: "{{ lv_name }}"
+    size: "{{ lv_size | regex_replace('Gi', 'G') | regex_replace('Mi', 'M') | regex_replace('Ti', 'T') | regex_replace('Ei', 'E') | default('G') }}"
+
+- name: Create filesystem
+  filesystem:
+    resizefs: "{{ fs_resize }}" 
+    fstype: "{{ fs_type }}"
+    dev: /dev/{{ vg_name }}/{{ lv_name }}
+
+- name: Get UUID
+  command: lsblk /dev/{{ vg_name }}/{{ lv_name }} -no UUID
+  register: r_uuid
+
+- name: Mount LogicalVolume
+  mount:
+    state: mounted
+    path: "{{ mount_path }}"
+    src: UUID={{ r_uuid.stdout }}
+    opts: nofail,noatime,nodiratime,logbufs=8,logbsize=256k
+    fstype: "{{ fs_type }}"
+
+- name: Change directory mount permission
+  file:
+    state: directory
+    path: "{{ item.path }}"
+    mode: "{{ item.mode }}"
+  loop:
+    - path: "{{ mount_path }}"
+      mode: u+rwx,g+rwx,o+rwx
+    - path: "{{ mount_path.split('/')[:-1] | join('/') }}"
+      mode: u+rwx,g+rx,o+rx
+
+- name: Add MountPath to export file
+  lineinfile:
+    path: /etc/exports
+    regexp: "{{ _regexp }}"
+    line: "{{ mount_path }} {{ export_cidr }}(rw,sync)"
+  vars:
+    _regexp: "^{{ mount_path }}"
+  notify:
+    - Export FS

@@ -3,6 +3,7 @@ module github.com/Cloud-for-You/storage-operator
 go 1.21
 
 require (
+	github.com/Kaginari/ansible-tower-sdk v0.1.4
 	github.com/go-logr/logr v1.4.1
 	github.com/onsi/ginkgo/v2 v2.14.0
 	github.com/onsi/gomega v1.30.0
@@ -11,6 +12,8 @@ require (
 	k8s.io/client-go v0.29.0
 	sigs.k8s.io/controller-runtime v0.17.2
 )
+
+require github.com/gorilla/mux v1.8.1 // indirect
 
 require (
 	github.com/beorn7/perks v1.0.1 // indirect

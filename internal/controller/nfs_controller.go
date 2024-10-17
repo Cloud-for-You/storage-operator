@@ -18,8 +18,10 @@ package controller
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
+	"regexp"
 	"time"
 
 	v1 "k8s.io/api/core/v1"
@@ -35,6 +37,7 @@ import (
 
 	storagev1 "github.com/Cloud-for-You/storage-operator/api/v1"
 	"github.com/Cloud-for-You/storage-operator/pkg/nfsclient"
+	"github.com/Cloud-for-You/storage-operator/pkg/provisioner"
 	sc "github.com/Cloud-for-You/storage-operator/pkg/storageclass"
 	"github.com/go-logr/logr"
 )
@@ -104,30 +107,9 @@ func (r *NfsReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 
 	// Update status to Pending
 	if nfs.Status.Phase == "" {
-		statusUpdate := storagev1.NfsStatus{
-			Phase: storagev1.PhasePending,
-		}
-		nfs.Status = statusUpdate
+		nfs.Status.Phase = string(storagev1.PhasePending)
 		if err := r.Status().Update(ctx, nfs); err != nil {
 			log.Error(err, "Failed to update Nfs status")
-		}
-	}
-
-	// Verify the existence of spec.path on the Nfs server
-	if os.Getenv("CHECK_EXPORTPATH") == "true" {
-		err := r.validateExportPath(nfs)
-		if err != nil {
-			// Nastavime error message v Nfs, kterou jsme ziskali z checkeru a posleme objekt do rekoncilace,
-			// ktera probehne napriklad za 20s
-			statusUpdate := storagev1.NfsStatus{
-				Phase:   "Error",
-				Message: err.Error(),
-			}
-			nfs.Status = statusUpdate
-			if err := r.Status().Update(ctx, nfs); err != nil {
-				log.Error(err, "Failed to update Nfs status")
-			}
-			return ctrl.Result{RequeueAfter: 10 * time.Second}, nil
 		}
 	}
 
@@ -156,6 +138,70 @@ func (r *NfsReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 	foundPV := &v1.PersistentVolume{}
 	err = r.Get(ctx, types.NamespacedName{Name: nfs.Namespace + "-" + nfs.Name, Namespace: ""}, foundPV)
 	if err != nil && errors.IsNotFound(err) {
+		// Provolani automatizace za predpokladu, ze je na provisioner automatizace zapnuta
+		// Get provisioner and parameters from StorageClass
+		storageClass, err := sc.GetStorageClass("nfs")
+		if err != nil {
+			log.Error(err, "not found storageclass")
+		}
+		if automationType := regexp.MustCompile(`[^/]+$`).FindString(storageClass.Provisioner); automationType != "" {
+			if nfs.Status.Automation == "" {
+				// Spustime automatizaci
+				automationResult, err := provisioner.RunAutomation(automationType, storageClass.Parameters)
+				if err != nil {
+					nfs.Status.Automation = storagev1.AutomationError
+					nfs.Status.Message = err.Error()
+					if err := r.Status().Update(ctx, nfs); err != nil {
+						log.Error(err, "Failed to update Nfs status")
+					}
+					return ctrl.Result{RequeueAfter: 10 * time.Second}, err
+				}
+				if automationResult.Data["status"] == storagev1.AutomationRunning {
+					jsonData, _ := json.Marshal(automationResult.Data)
+					nfs.Status.Automation = storagev1.AutomationRunning
+					nfs.Status.Message = string(jsonData)
+					if err := r.Status().Update(ctx, nfs); err != nil {
+						log.Error(err, "Failed to update Nfs status")
+					}
+					return ctrl.Result{}, err
+				}
+			}
+			if nfs.Status.Automation == storagev1.AutomationRunning {
+				// Zde spustime Job pro ziskani stavu automatizace
+				validateResult, err := provisioner.ValidateAutomation(automationType, storageClass.Parameters)
+				if err != nil {
+					log.Error(err, "Failed validate automation")
+				}
+				if validateResult.Data["status"] != storagev1.AutomationCompleted {
+					return ctrl.Result{RequeueAfter: 10 * time.Second}, err
+				}
+				nfs.Status.Automation = storagev1.AutomationCompleted
+				if err := r.Status().Update(ctx, nfs); err != nil {
+					log.Error(err, "Failed to update Nfs status")
+				}
+			}
+			if nfs.Status.Automation != storagev1.AutomationCompleted {
+				return ctrl.Result{RequeueAfter: 10 * time.Second}, err
+			}
+		}
+
+		// Overeni ze existuje export path na NFS serveru
+		// Verify the existence of spec.path on the Nfs server
+		if os.Getenv("CHECK_EXPORTPATH") == "true" {
+			log.Info("Validate existing nfs export in NFS server")
+			err := r.validateExportPath(nfs)
+			if err != nil {
+				// Nastavime error message v Nfs, kterou jsme ziskali z checkeru a posleme objekt do rekoncilace,
+				// ktera probehne napriklad za 20s
+				nfs.Status.Phase = "Error"
+				nfs.Status.Message = err.Error()
+				if err := r.Status().Update(ctx, nfs); err != nil {
+					log.Error(err, "Failed to update Nfs status")
+				}
+				return ctrl.Result{RequeueAfter: 10 * time.Second}, nil
+			}
+		}
+
 		pv := r.pvForNfs(nfs)
 		log.Info("Creating a new PV", "PV.Name", pv.Name)
 		err = r.Create(ctx, pv)
@@ -206,11 +252,9 @@ func (r *NfsReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 		if err != nil {
 			return ctrl.Result{Requeue: true}, nil
 		}
-		statusUpdate := storagev1.NfsStatus{
-			PVCName: foundPVC.Name,
-			Phase:   string(foundPVC.Status.Phase),
-		}
-		nfs.Status = statusUpdate
+		nfs.Status.Phase = string(foundPVC.Status.Phase)
+		nfs.Status.PVCName = foundPVC.Name
+		nfs.Status.Message = ""
 		if err := r.Status().Update(ctx, nfs); err != nil {
 			log.Error(err, "Failed to update Nfs status")
 			return ctrl.Result{Requeue: true}, nil
@@ -223,9 +267,6 @@ func (r *NfsReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 
 func (r *NfsReconciler) pvcForNfs(m *storagev1.Nfs) (*v1.PersistentVolumeClaim, error) {
 	sc, err := sc.GetStorageClass("nfs")
-	if err != nil {
-		log.Log.Error(err, "not found storageclass")
-	}
 	if err != nil {
 		log.Log.Error(err, "not found storageclass")
 	}
@@ -331,7 +372,7 @@ func (r *NfsReconciler) validateExportPath(nfs *storagev1.Nfs) error {
 	}
 
 	if !containsExportPath(AllNfsExports, nfs.Spec.Path) {
-		return fmt.Errorf("NFS server does't export the specified directory " + nfs.Spec.Path)
+		return fmt.Errorf("NFS server does't export the specified directory %s", nfs.Spec.Path)
 	}
 
 	return nil
