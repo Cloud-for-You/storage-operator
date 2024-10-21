@@ -1,15 +1,8 @@
 name: Build DEV version
 on:
   workflow_dispatch:
-    inputs:
-      branch:
-        description: 'Branch to run the workflow on'
-        required: true
-        default: 'main'
 
 jobs:
   build-image-container:
     uses: Cloud-for-You/github-workflows/.github/workflows/build-go-container.yaml@main
     secrets: inherit
-    with:
-      ref_name: ${{ github.ref_name }}
