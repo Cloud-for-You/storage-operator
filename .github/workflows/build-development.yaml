@@ -1,4 +1,4 @@
-name: Release and build application
+name: Build DEV
 on:
   workflow_dispatch:
     inputs:
