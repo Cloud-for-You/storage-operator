@@ -1,4 +1,4 @@
-name: Build DEV
+name: Build DEV version
 on:
   workflow_dispatch:
     inputs:
