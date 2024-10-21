@@ -1,4 +1,4 @@
-name: Build RELESE version
+name: Release version
 on:
   push:
     branches:
