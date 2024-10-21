@@ -1,0 +1,13 @@
+name: Release and build application
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to run the workflow on'
+        required: true
+        default: 'main'
+
+jobs:
+  build-image-container:
+    uses: Cloud-for-You/github-workflows/.github/workflows/build-go-container.yaml@main
+    secrets: inherit
