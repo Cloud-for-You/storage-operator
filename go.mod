@@ -13,8 +13,6 @@ require (
 	sigs.k8s.io/controller-runtime v0.17.2
 )
 
-require github.com/gorilla/mux v1.8.1 // indirect
-
 require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
