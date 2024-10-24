@@ -5,7 +5,9 @@ type Response struct {
 	Data   map[string]interface{}
 }
 
+type StorageClassParameters map[string]string
+
 type Plugin interface {
-	Run(params interface{}) (*Response, error)
+	Run(scp StorageClassParameters, provisionObject interface{}) (*Response, error)
 	Validate(params interface{}) (*Response, error)
 }

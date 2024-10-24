@@ -10,7 +10,7 @@ AWX_USERNAME | | (optional) Pouze pokud je ve storageClass zapnuta automatizace 
 AWX_PASSWORD | | (optional) Pouze  pokud je ve storageClass zapnuta automatizace pomocí AWX.
 
 ## StorageClass
-Pro správné fungování operátor vyžaduje v clusteru storageClass, která musí obsahovat annotaci ***storage-operator.cfy.cz/storage-type: nfs***. Pro automatizované provisionování nfs exportu je možné povolit automatizaci parametrem provisioner. Aktuálně je podporována pouze jediná automatizace a to provolání RestAPI Ansible Toweru a spuštění existující template. Tato template je uvedena ve storageClass jako ***parameters.job_template_id*** a dále je nutné specifikovat jméno endpointu pro provisionování PVC ***parameters.hosts***. Tento parametr se dále přenáší jako hosts pro spouštěný Ansible Playbook.
+Pro správné fungování operátor vyžaduje v clusteru storageClass, která musí obsahovat annotaci ***storage-operator.cfy.cz/storage-type: nfs***. Pro automatizované provisionování nfs exportu je možné povolit automatizaci parametrem provisioner. Aktuálně je podporována pouze jediná automatizace a to provolání RestAPI Ansible Toweru a spuštění existující template. Tato template je uvedena ve storageClass jako ***parameters.job-template-id*** a dále je nutné specifikovat jméno endpointu pro provisionování PVC ***parameters.hosts***. Tento parametr se dále přenáší jako hosts pro spouštěný Ansible Playbook.
 
 ```yaml
 allowVolumeExpansion: true
@@ -26,7 +26,7 @@ mountOptions:
 - intr
 provisioner: storage-operator.cfy.cz/awx
 parameters:
-  job_template_id: "105"
+  job-template-id: "105"
   hosts: "ansible_hosts"
 reclaimPolicy: Retain
 volumeBindingMode: Immediate

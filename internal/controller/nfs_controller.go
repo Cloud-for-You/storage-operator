@@ -157,7 +157,7 @@ func (r *NfsReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 				case "generic":
 					selectedPlugin = &provisioning_plugin.GenericPlugin{}
 				}
-				_, err := selectedPlugin.Run(storageClass.Parameters)
+				automation, err := selectedPlugin.Run(storageClass.Parameters, nfs)
 				if err != nil {
 					automationStatus := storagev1.AutomationError
 					message := fmt.Sprintf("Automation [%s]: %v", provisionerName, err.Error())
@@ -167,7 +167,7 @@ func (r *NfsReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 					}
 					return ctrl.Result{RequeueAfter: 10 * time.Second}, nil
 				}
-				automationStatus := storagev1.AutomationRunning
+				automationStatus := automation.Status
 				if err := r.setStatus(ctx, nfs, nil, nil, &automationStatus, nil); err != nil {
 					log.Error(err, "Failed to update Nfs status")
 				}

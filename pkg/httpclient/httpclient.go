@@ -74,7 +74,7 @@ func SendRequest(params RequestParams) (APIResponse, error) {
 	}
 
 	// Ověříme syrový JSON (můžete odstranit, pokud nepotřebujete výpis)
-	fmt.Printf("Raw JSON: %s\n", string(body))
+	//fmt.Printf("Raw JSON: %s\n", string(body))
 
 	// Parsujeme JSON do struktury APIResponse
 	var apiResponse APIResponse
@@ -84,4 +84,11 @@ func SendRequest(params RequestParams) (APIResponse, error) {
 	}
 
 	return apiResponse, nil
+}
+
+func ReadDataFromResponse(data APIResponse, key string) (string, error) {
+	if t, ok := data[key].(string); ok {
+		return t, nil
+	}
+	return "", fmt.Errorf("token field not found or is not a string")
 }
