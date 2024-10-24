@@ -1,0 +1,5 @@
+---
+# handlers file for provisioning-nfs-export
+
+- name: Export FS
+  command: exportfs -rav
