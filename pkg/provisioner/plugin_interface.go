@@ -3,7 +3,7 @@ package provisioner
 type Response struct {
 	ProvisioningPlugin string      `json:"provisioning_plugin"`
 	State              string      `json:"state"`
-	Data               interface{} `json:"k8s,omitempty"`
+	Data               interface{} `json:"response_data,omitempty"`
 }
 
 type JobParameters struct {
