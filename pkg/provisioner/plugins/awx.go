@@ -80,13 +80,11 @@ func runJobTemplate(
 	jobId string,
 	ansibleParams provisioner.JobParameters,
 ) (responseTemplate httpclient.APIResponse) {
-	jsonBytes, err := json.Marshal(ansibleParams)
+	jsonData, err := json.Marshal(ansibleParams)
 	if err != nil {
 		log.Log.Error(err, "Error marshalling JobParameters")
 		return nil
 	}
-	jsonBody := string(jsonBytes)
-	fmt.Println(jsonBody)
 
 	params := httpclient.RequestParams{
 		URL:    fmt.Sprintf("%s%s", host, fmt.Sprintf("/api/v2/job_templates/%s/launch/", jobId)),
@@ -95,7 +93,7 @@ func runJobTemplate(
 			"Authorization": fmt.Sprintf("Bearer %s", token),
 			"Content-Type":  "application/json",
 		},
-		Body: jsonBody,
+		Body: string(jsonData),
 	}
 
 	response, err := httpclient.SendRequest(params)
