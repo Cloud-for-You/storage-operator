@@ -37,7 +37,11 @@ func (p *AWXPlugin) Run(
 
 	// Run jobTemplate in AWX
 	jobTemplate := runJobTemplate(host, bearerToken, jobId, jobParameters)
-	fmt.Println("Running JOB: ", jobTemplate)
+	jobTemplateJson, err := json.Marshal(jobTemplate)
+	if err != nil {
+		return nil, err
+	}
+	fmt.Println("Running JOB: ", gjson.Get(string(jobTemplateJson), "status").Str)
 
 	provisionerResponse.Status = storagev1.AutomationRunning
 	provisionerResponse.Data = token
@@ -71,8 +75,8 @@ func getToken(host, username, password string) (responseToken httpclient.APIResp
 }
 
 func runJobTemplate(
-	host,
-	token,
+	host string,
+	token string,
 	jobId string,
 	ansibleParams provisioner.JobParameters,
 ) (responseTemplate httpclient.APIResponse) {
