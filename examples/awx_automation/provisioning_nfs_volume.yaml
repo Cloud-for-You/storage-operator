@@ -3,7 +3,7 @@
   become: true
 
   vars:
-    openshift: true
+    k8s: true
     cluster_name: ocp
     namespace_name: default
     pvc_name: default

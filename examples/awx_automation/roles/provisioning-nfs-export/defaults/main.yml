@@ -1,7 +1,7 @@
 ---
 # defaults file for provisioning-nfs-export
 
-openshift: "{{ awx_openshift | default(openshift) }}"
+k8s: "{{ awx_openshift | default(k8s) }}"
 lv_prefix: "{{ awx_lv_prefix | default(lv_prefix) }}"
 vg_name: "{{ awx_vg_name | default(vg_name) }}"
 lv_name: "{{ awx_lv_name | default(lv_name) }}"

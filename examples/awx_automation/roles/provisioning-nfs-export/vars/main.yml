@@ -1,7 +1,7 @@
 ---
 # vars file for provisioning-nfs-export
 
-openshift: true
+k8s: true
 lv_prefix: lv_nfs
 vg_name: vg00
 lv_name: default 
