@@ -12,12 +12,12 @@ type JobParameters struct {
 
 type ExtraVars struct {
 	K8s           string `json:"k8s,omitempty"`
-	ClusterName   string `json:"cluster-name"`
-	NamespaceName string `json:"namespace-name"`
-	PvcName       string `json:"pvc-name"`
-	PvcSize       string `json:"pvc-size"`
-	VgName        string `json:"vg-name,omitempty"`
-	ExportCidr    string `json:"export-cidr,omitempty"`
+	ClusterName   string `json:"cluster_name"`
+	NamespaceName string `json:"namespace_name"`
+	PvcName       string `json:"pvc_name"`
+	PvcSize       string `json:"pvc_size"`
+	VgName        string `json:"vg_name,omitempty"`
+	ExportCidr    string `json:"export_cidr,omitempty"`
 }
 
 type Plugin interface {

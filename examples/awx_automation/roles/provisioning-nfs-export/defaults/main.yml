@@ -2,6 +2,9 @@
 # defaults file for provisioning_nfs_export
 
 role_provisioning_nfs_export_k8s: true
+role_provisioning_nfs_export_cluster_name: default
+role_provisioning_nfs_export_namespace_name: default
+role_provisioning_nfs_export_pvc_name: default
 role_provisioning_nfs_export_lv_prefix: lv_nfs
 role_provisioning_nfs_export_vg_name: vg00
 role_provisioning_nfs_export_lv_name: default
