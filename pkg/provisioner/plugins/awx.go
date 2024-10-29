@@ -20,7 +20,7 @@ func (p *AWXPlugin) Run(
 	jobId string,
 	jobParameters provisioner.JobParameters,
 ) (*provisioner.Response, error) {
-	log.Log.Info(fmt.Sprintf("%s %v", "Running AWX job with params: ", jobParameters))
+	log.Log.Info("Running AWX job")
 	provisionerResponse := &provisioner.Response{}
 
 	host := os.Getenv("AWX_URL")

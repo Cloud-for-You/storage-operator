@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/Cloud-for-You/storage-operator/pkg/provisioner"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 // GenericPlugin implementuje Plugin interface
@@ -13,9 +14,9 @@ func (p *GenericPlugin) Run(
 	jobId string,
 	jobParameters provisioner.JobParameters,
 ) (*provisioner.Response, error) {
-	fmt.Println("Running Generic job with params:", jobParameters)
-	response := &provisioner.Response{}
-	return response, nil
+	log.Log.Info("Running Generic job")
+	provisionerResponse := &provisioner.Response{}
+	return provisionerResponse, nil
 }
 
 func (p *GenericPlugin) Validate(params interface{}) (*provisioner.Response, error) {
