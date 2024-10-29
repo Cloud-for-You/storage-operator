@@ -2,7 +2,7 @@ package provisioner
 
 type Response struct {
 	Status string
-	Data   map[string]interface{}
+	Data   interface{}
 }
 
 type JobParameters struct {

@@ -37,12 +37,14 @@ func (p *AWXPlugin) Run(
 
 	// Run jobTemplate in AWX
 	jobTemplate := runJobTemplate(host, bearerToken, jobId, jobParameters)
+	var jobTemplateJson interface{}
+	jobTemplateJson, err = json.Marshal(jobTemplate)
 	if err != nil {
 		return nil, err
 	}
 
 	provisionerResponse.Status = storagev1.AutomationRunning
-	provisionerResponse.Data = jobTemplate
+	provisionerResponse.Data = jobTemplateJson
 	return provisionerResponse, nil
 }
 
@@ -78,11 +80,7 @@ func runJobTemplate(
 	jobId string,
 	ansibleParams provisioner.JobParameters,
 ) (responseTemplate httpclient.APIResponse) {
-	jsonData, err := json.Marshal(ansibleParams)
-	if err != nil {
-		log.Log.Error(err, "Error marshalling JobParameters")
-		return nil
-	}
+	var ansibleParamsInterface interface{} = ansibleParams
 
 	params := httpclient.RequestParams{
 		URL:    fmt.Sprintf("%s%s", host, fmt.Sprintf("/api/v2/job_templates/%s/launch/", jobId)),
@@ -91,7 +89,7 @@ func runJobTemplate(
 			"Authorization": fmt.Sprintf("Bearer %s", token),
 			"Content-Type":  "application/json",
 		},
-		Body: string(jsonData),
+		Body: ansibleParamsInterface,
 	}
 
 	response, err := httpclient.SendRequest(params)
