@@ -34,11 +34,10 @@ func (p *AWXPlugin) Run(
 		return nil, err
 	}
 	bearerToken := gjson.Get(string(tokenJson), "token").Str
-	fmt.Println(bearerToken)
 
 	// Run jobTemplate in AWX
 	jobTemplate := runJobTemplate(host, bearerToken, jobId, jobParameters)
-	fmt.Println(jobTemplate)
+	fmt.Println("Running JOB: ", jobTemplate)
 
 	provisionerResponse.Status = storagev1.AutomationRunning
 	provisionerResponse.Data = token
@@ -71,8 +70,19 @@ func getToken(host, username, password string) (responseToken httpclient.APIResp
 	return response
 }
 
-func runJobTemplate(host, token, jobId string, ansibleParams interface{}) (responseTemplate httpclient.APIResponse) {
-	fmt.Println(ansibleParams)
+func runJobTemplate(
+	host,
+	token,
+	jobId string,
+	ansibleParams provisioner.JobParameters,
+) (responseTemplate httpclient.APIResponse) {
+	jsonBytes, err := json.Marshal(ansibleParams)
+	if err != nil {
+		log.Log.Error(err, "Error marshalling JobParameters")
+		return nil
+	}
+	jsonBody := string(jsonBytes)
+	fmt.Println(jsonBody)
 
 	params := httpclient.RequestParams{
 		URL:    fmt.Sprintf("%s%s", host, fmt.Sprintf("/api/v2/job_templates/%s/launch/", jobId)),
@@ -81,7 +91,7 @@ func runJobTemplate(host, token, jobId string, ansibleParams interface{}) (respo
 			"Authorization": fmt.Sprintf("Bearer %s", token),
 			"Content-Type":  "application/json",
 		},
-		Body: ansibleParams,
+		Body: jsonBody,
 	}
 
 	response, err := httpclient.SendRequest(params)

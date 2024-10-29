@@ -6,12 +6,12 @@ type Response struct {
 }
 
 type JobParameters struct {
-	Limit     string
-	ExtraVars ExtraVars
+	Limit     string    `json:"limit"`
+	ExtraVars ExtraVars `json:"extra_vars"`
 }
 
 type ExtraVars struct {
-	K8s           bool   `json:"k8s"`
+	K8s           string `json:"k8s,omitempty"`
 	ClusterName   string `json:"cluster-name"`
 	NamespaceName string `json:"namespace-name"`
 	PvcName       string `json:"pvc-name"`

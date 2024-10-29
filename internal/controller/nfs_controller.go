@@ -161,7 +161,6 @@ func (r *NfsReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 				}
 
 				jobParameters.Limit = storageClass.Parameters["hosts"]
-				jobParameters.ExtraVars.K8s = true
 				jobParameters.ExtraVars.ClusterName = os.Getenv("CLUSTER_NAME")
 				jobParameters.ExtraVars.NamespaceName = nfs.Namespace
 				jobParameters.ExtraVars.PvcName = nfs.Name
