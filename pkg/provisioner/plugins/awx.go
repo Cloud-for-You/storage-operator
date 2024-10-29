@@ -37,14 +37,12 @@ func (p *AWXPlugin) Run(
 
 	// Run jobTemplate in AWX
 	jobTemplate := runJobTemplate(host, bearerToken, jobId, jobParameters)
-	jobTemplateJson, err := json.Marshal(jobTemplate)
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println("Running JOB: ", gjson.Get(string(jobTemplateJson), "status").Str)
 
 	provisionerResponse.Status = storagev1.AutomationRunning
-	provisionerResponse.Data = token
+	provisionerResponse.Data = jobTemplate
 	return provisionerResponse, nil
 }
 
