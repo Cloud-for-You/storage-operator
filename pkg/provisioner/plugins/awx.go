@@ -37,23 +37,14 @@ func (p *AWXPlugin) Run(
 
 	// Run jobTemplate in AWX
 	jobTemplate := runJobTemplate(host, bearerToken, jobId, jobParameters)
-	var jobTemplateJson interface{}
-	jobTemplateJson, err = json.Marshal(jobTemplate)
+	jobTemplateJson, err := json.Marshal(jobTemplate)
 	if err != nil {
 		return nil, err
 	}
-
-	jobTemplateInterfaceMap, ok := jobTemplateJson.(map[string]interface{})
-	if !ok {
-		err = fmt.Errorf("jobTemplateJson not type map[string]interface{}")
-		return nil, err
-	}
-
 	responseData := map[string]interface{}{
-		"job_id": jobTemplateInterfaceMap["id"],
-		"status": jobTemplateInterfaceMap["status"],
+		"job_id": gjson.Get(string(jobTemplateJson), "id").Str,
+		"status": gjson.Get(string(jobTemplateJson), "status").Str,
 	}
-
 	provisionerResponse.ProvisioningPlugin = "awx"
 	provisionerResponse.State = storagev1.AutomationRunning
 	provisionerResponse.Data = responseData
