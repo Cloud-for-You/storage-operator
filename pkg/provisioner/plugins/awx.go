@@ -42,7 +42,7 @@ func (p *AWXPlugin) Run(
 		return nil, err
 	}
 	responseData := map[string]interface{}{
-		"job_id": gjson.Get(string(jobTemplateJson), "id").Str,
+		"job_id": gjson.Get(string(jobTemplateJson), "job").Str,
 		"status": gjson.Get(string(jobTemplateJson), "status").Str,
 	}
 	provisionerResponse.ProvisioningPlugin = "awx"
