@@ -16,14 +16,16 @@ import (
 // AWXPlugin implementuje Plugin interface
 type AWXPlugin struct{}
 
-func (p *AWXPlugin) Run(scp provisioner.StorageClassParameters, po interface{}) (*provisioner.Response, error) {
-	log.Log.Info(fmt.Sprintf("%s %s", "Running AWX job with params: ", scp))
+func (p *AWXPlugin) Run(
+	jobId string,
+	jobParameters provisioner.JobParameters,
+) (*provisioner.Response, error) {
+	log.Log.Info(fmt.Sprintf("%s %v", "Running AWX job with params: ", jobParameters))
 	provisionerResponse := &provisioner.Response{}
 
 	host := os.Getenv("AWX_URL")
 	username := os.Getenv("AWX_USERNAME")
 	password := os.Getenv("AWX_PASSWORD")
-	jobId := scp["job-template-id"]
 
 	// Get BearerToken for username/password
 	token := getToken(host, username, password)
@@ -35,7 +37,7 @@ func (p *AWXPlugin) Run(scp provisioner.StorageClassParameters, po interface{}) 
 	fmt.Println(bearerToken)
 
 	// Run jobTemplate in AWX
-	jobTemplate := runJobTemplate(host, bearerToken, jobId, po)
+	jobTemplate := runJobTemplate(host, bearerToken, jobId, jobParameters)
 	fmt.Println(jobTemplate)
 
 	provisionerResponse.Status = storagev1.AutomationRunning
@@ -79,6 +81,7 @@ func runJobTemplate(host, token, jobId string, ansibleParams interface{}) (respo
 			"Authorization": fmt.Sprintf("Bearer %s", token),
 			"Content-Type":  "application/json",
 		},
+		Body: ansibleParams,
 	}
 
 	response, err := httpclient.SendRequest(params)

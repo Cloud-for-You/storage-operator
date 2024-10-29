@@ -151,13 +151,23 @@ func (r *NfsReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 			}
 			if nfs.Status.Automation == "" {
 				var selectedPlugin provisioner.Plugin
+				var jobParameters provisioner.JobParameters
+
 				switch provisionerName {
 				case "awx":
 					selectedPlugin = &provisioning_plugin.AWXPlugin{}
 				case "generic":
 					selectedPlugin = &provisioning_plugin.GenericPlugin{}
 				}
-				automation, err := selectedPlugin.Run(storageClass.Parameters, nfs)
+
+				jobParameters.Limit = storageClass.Parameters["hosts"]
+				jobParameters.ExtraVars.K8s = true
+				jobParameters.ExtraVars.ClusterName = os.Getenv("CLUSTER_NAME")
+				jobParameters.ExtraVars.NamespaceName = nfs.Namespace
+				jobParameters.ExtraVars.PvcName = nfs.Name
+				jobParameters.ExtraVars.PvcSize = nfs.Spec.Capacity
+
+				automation, err := selectedPlugin.Run(storageClass.Parameters["job-template-id"], jobParameters)
 				if err != nil {
 					automationStatus := storagev1.AutomationError
 					message := fmt.Sprintf("Automation [%s]: %v", provisionerName, err.Error())

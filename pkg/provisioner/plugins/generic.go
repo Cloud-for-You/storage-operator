@@ -9,8 +9,11 @@ import (
 // GenericPlugin implementuje Plugin interface
 type GenericPlugin struct{}
 
-func (p *GenericPlugin) Run(scp provisioner.StorageClassParameters, object interface{}) (*provisioner.Response, error) {
-	fmt.Println("Running Generic with params:", scp)
+func (p *GenericPlugin) Run(
+	jobId string,
+	jobParameters provisioner.JobParameters,
+) (*provisioner.Response, error) {
+	fmt.Println("Running Generic job with params:", jobParameters)
 	response := &provisioner.Response{}
 	return response, nil
 }
