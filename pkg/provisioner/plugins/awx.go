@@ -43,8 +43,20 @@ func (p *AWXPlugin) Run(
 		return nil, err
 	}
 
-	provisionerResponse.Status = storagev1.AutomationRunning
-	provisionerResponse.Data = jobTemplateJson
+	jobTemplateInterfaceMap, ok := jobTemplateJson.(map[string]interface{})
+	if !ok {
+		err = fmt.Errorf("jobTemplateJson not type map[string]interface{}")
+		return nil, err
+	}
+
+	responseData := map[string]interface{}{
+		"job_id": jobTemplateInterfaceMap["id"],
+		"status": jobTemplateInterfaceMap["status"],
+	}
+
+	provisionerResponse.ProvisioningPlugin = "awx"
+	provisionerResponse.State = storagev1.AutomationRunning
+	provisionerResponse.Data = responseData
 	return provisionerResponse, nil
 }
 

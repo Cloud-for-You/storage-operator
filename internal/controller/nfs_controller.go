@@ -176,17 +176,19 @@ func (r *NfsReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 					}
 					return ctrl.Result{RequeueAfter: 10 * time.Second}, nil
 				}
-				automationStatus := automation.Status
-				if err := r.setStatus(ctx, nfs, nil, nil, &automationStatus, nil); err != nil {
+				automationStatus := automation.State
+				message := fmt.Sprintf("%s", automation)
+				messagePtr := &message
+				if err := r.setStatus(ctx, nfs, nil, nil, &automationStatus, messagePtr); err != nil {
 					log.Error(err, "Failed to update Nfs status")
 				}
 				return ctrl.Result{RequeueAfter: 10 * time.Second}, nil
 			}
 			if nfs.Status.Automation == storagev1.AutomationRunning {
-				automationStatus := storagev1.AutomationCompleted
-				if err := r.setStatus(ctx, nfs, nil, nil, &automationStatus, nil); err != nil {
-					log.Error(err, "Failed to update Nfs status")
-				}
+				//automationStatus := storagev1.AutomationCompleted
+				//if err := r.setStatus(ctx, nfs, nil, nil, &automationStatus, nil); err != nil {
+				//	log.Error(err, "Failed to update Nfs status")
+				//}
 				return ctrl.Result{}, err
 			}
 		} else {

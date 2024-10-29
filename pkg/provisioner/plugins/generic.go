@@ -3,6 +3,7 @@ package provisioning_plugin
 import (
 	"fmt"
 
+	storagev1 "github.com/Cloud-for-You/storage-operator/api/v1"
 	"github.com/Cloud-for-You/storage-operator/pkg/provisioner"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
@@ -16,6 +17,9 @@ func (p *GenericPlugin) Run(
 ) (*provisioner.Response, error) {
 	log.Log.Info("Running Generic job")
 	provisionerResponse := &provisioner.Response{}
+	provisionerResponse.ProvisioningPlugin = "generic"
+	provisionerResponse.State = storagev1.AutomationRunning
+	provisionerResponse.Data = "{}"
 	return provisionerResponse, nil
 }
 
