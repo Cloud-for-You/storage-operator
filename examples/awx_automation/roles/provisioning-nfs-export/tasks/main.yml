@@ -17,7 +17,7 @@
 
 - name: Create filesystem
   filesystem:
-    resizefs: "{{ fs_resize }}" 
+    resizefs: "{{ fs_resize }}"
     fstype: "{{ fs_type }}"
     dev: /dev/{{ vg_name }}/{{ lv_name }}
 

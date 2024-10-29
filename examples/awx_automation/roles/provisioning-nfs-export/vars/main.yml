@@ -1,12 +1,12 @@
 ---
-# vars file for provisioning-nfs-export
+# vars file for provisioning_nfs_export
 
-k8s: "{{ awx_openshift | default(k8s) }}"
-lv_prefix: "{{ awx_lv_prefix | default(lv_prefix) }}"
-vg_name: "{{ awx_vg_name | default(vg_name) }}"
-lv_name: "{{ awx_lv_name | default(lv_name) }}"
-lv_size: "{{ awx_lv_size | default(lv_size) }}"
-mount_path: "{{ awx_mount_path | default(mount_path) }}"
-fs_type: "{{ awx_fs_type | default(fs_type) }}"
-fs_resize: "{{ awx_resize_fs | default(fs_resize) }}"
-export_cidr: "{{ awx_export_cidr | default(export_cidr) }}"
+k8s: "{{ awx_openshift | default(role_provisioning_nfs_export_k8s) }}"
+lv_prefix: "{{ awx_lv_prefix | default(role_provisioning_nfs_export_lv_prefix) }}"
+vg_name: "{{ awx_vg_name | default(role_provisioning_nfs_export_vg_name) }}"
+lv_name: "{{ awx_lv_name | default(role_provisioning_nfs_export_lv_name) }}"
+lv_size: "{{ awx_lv_size | default(role_provisioning_nfs_export_lv_size) }}"
+mount_path: "{{ awx_mount_path | default(role_provisioning_nfs_export_mount_path) }}"
+fs_type: "{{ awx_fs_type | default(role_provisioning_nfs_export_fs_type) }}"
+fs_resize: "{{ awx_resize_fs | default(role_provisioning_nfs_export_fs_resize) }}"
+export_cidr: "{{ awx_export_cidr | default(role_provisioning_nfs_export_export_cidr) }}"
