@@ -2,9 +2,10 @@
 # vars file for provisioning_nfs_export
 
 k8s: "{{ awx_openshift | default(role_provisioning_nfs_export_k8s) }}"
-cluster_name: "{{ awx_cluster_name | default(role_provisioning_nfs_export_cluster_name) }}"
-namespace_name: "{{ awx_namespace_name | default(role_provisioning_nfs_export_namespace_name) }}"
-pvc_name: "{{ awx_pvc_name | default(role_provisioning_nfs_export_pvc_name) }}"
+k8s_cluster_name: "{{ awx_k8s_cluster_name | default(role_provisioning_nfs_export_k8s_cluster_name) }}"
+k8s_namespace_name: "{{ awx_k8s_namespace_name | default(role_provisioning_nfs_export_k8s_namespace_name) }}"
+k8s_pvc_name: "{{ awx_k8s_pvc_name | default(role_provisioning_nfs_export_k8s_pvc_name) }}"
+k8s_pvc_size: "{{ awx_k8s_pvc_size | default(role_provisioning_nfs_export_k8s_pvc_size) }}"
 lv_prefix: "{{ awx_lv_prefix | default(role_provisioning_nfs_export_lv_prefix) }}"
 vg_name: "{{ awx_vg_name | default(role_provisioning_nfs_export_vg_name) }}"
 lv_name: "{{ awx_lv_name | default(role_provisioning_nfs_export_lv_name) }}"

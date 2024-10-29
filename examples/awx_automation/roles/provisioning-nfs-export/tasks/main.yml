@@ -3,8 +3,8 @@
 
 - name: Set LogicalVolume Name if OpenShift
   set_fact:
-    lv_name: "{{ lv_prefix }}_{{ cluster_name }}_{{ namespace_name }}_{{ pvc_name }}"
-    lv_size: "{{ pvc_size }}"
+    lv_name: "{{ lv_prefix }}_{{ k8s_cluster_name }}_{{ k8s_namespace_name }}_{{ k8s_pvc_name }}"
+    lv_size: "{{ k8s_pvc_size }}"
     mount_path: /nfs/{{ cluster_name }}/{{ namespace_name }}/{{ pvc_name }}
   when:
     - k8s
