@@ -74,7 +74,7 @@ func SendRequest(params RequestParams) (APIResponse, error) {
 	}
 
 	// Ověříme syrový JSON (můžete odstranit, pokud nepotřebujete výpis)
-	fmt.Printf("Raw JSON: %s\n", string(body))
+	//fmt.Printf("Raw JSON: %s\n", string(body))
 
 	// Parsujeme JSON do struktury APIResponse
 	var apiResponse APIResponse
