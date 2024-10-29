@@ -1,12 +1,12 @@
 ---
 # vars file for provisioning-nfs-export
 
-k8s: true
-lv_prefix: lv_nfs
-vg_name: vg00
-lv_name: default 
-lv_size: 1g
-mount_path: /mnt/{{ lv_name }}
-fs_type: xfs
-fs_resize: true
-export_cidr: 0.0.0.0/0
+k8s: "{{ awx_openshift | default(k8s) }}"
+lv_prefix: "{{ awx_lv_prefix | default(lv_prefix) }}"
+vg_name: "{{ awx_vg_name | default(vg_name) }}"
+lv_name: "{{ awx_lv_name | default(lv_name) }}"
+lv_size: "{{ awx_lv_size | default(lv_size) }}"
+mount_path: "{{ awx_mount_path | default(mount_path) }}"
+fs_type: "{{ awx_fs_type | default(fs_type) }}"
+fs_resize: "{{ awx_resize_fs | default(fs_resize) }}"
+export_cidr: "{{ awx_export_cidr | default(export_cidr) }}"
