@@ -18,6 +18,7 @@ package controller
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"regexp"
@@ -177,7 +178,11 @@ func (r *NfsReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 					return ctrl.Result{RequeueAfter: 10 * time.Second}, nil
 				}
 				automationStatus := automation.State
-				message := fmt.Sprintf("%s", automation)
+				AutomationData, err := json.Marshal(automation)
+				if err != nil {
+					return ctrl.Result{}, err
+				}
+				message := string(AutomationData)
 				messagePtr := &message
 				if err := r.setStatus(ctx, nfs, nil, nil, &automationStatus, messagePtr); err != nil {
 					log.Error(err, "Failed to update Nfs status")
