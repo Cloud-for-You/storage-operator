@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.1](https://github.com/Cloud-for-You/storage-operator/compare/v1.6.0...v1.6.1) (2024-10-30)
+
+
+### Bug Fixes
+
+* **main:** Chyba ve workflow a opraveni verze ([b264c1d](https://github.com/Cloud-for-You/storage-operator/commit/b264c1df19b7ad9fc0a01437abe41e8157b195b3))
+
 ## [1.6.0](https://github.com/Cloud-for-You/storage-operator/compare/v1.5.1...v1.6.0) (2024-10-30)
 
 
