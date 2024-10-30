@@ -1,5 +1,5 @@
 # storage-operator
-Zjednodušuje vytváření vazby PersistentVolumeClaim a PersistentVolume v k8s clusteru. Pro vytvoření vazby postačí definovat CustomResource, který obsahuje popis, co se má v daném namespace připojit. Aktu8ln2 je podporov8no pouze NFS.
+Zjednodušuje vytváření vazby PersistentVolumeClaim a PersistentVolume v k8s clusteru. Pro vytvoření vazby postačí definovat CustomResource, který obsahuje popis, co se má v daném namespace připojit. Aktuálně je podporováno pouze NFS.
 
 ## Container Environment
 Environment | Default | Vyžadováno | Popis
