@@ -1,0 +1,18 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  annotations:
+    storage-operator.cfy.cz/storage-type: nfs
+  name: nfs
+provisioner: storage-operator.cfy.cz/awx
+parameters:
+  hosts: "tvlsnfs01.pmb.cz"
+  job-template-id: "105"
+  volume-group: "vg_nfs"
+mountOptions:
+  - nfsvers=4
+  - hard
+  - intr
+allowVolumeExpansion: true
+reclaimPolicy: Retain
+volumeBindingMode: Immediate

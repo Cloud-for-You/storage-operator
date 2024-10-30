@@ -6,10 +6,16 @@ require (
 	github.com/go-logr/logr v1.4.1
 	github.com/onsi/ginkgo/v2 v2.14.0
 	github.com/onsi/gomega v1.30.0
+	github.com/tidwall/gjson v1.18.0
 	k8s.io/api v0.29.0
 	k8s.io/apimachinery v0.29.0
 	k8s.io/client-go v0.29.0
 	sigs.k8s.io/controller-runtime v0.17.2
+)
+
+require (
+	github.com/tidwall/match v1.1.1 // indirect
+	github.com/tidwall/pretty v1.2.0 // indirect
 )
 
 require (

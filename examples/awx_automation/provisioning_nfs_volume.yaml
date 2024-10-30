@@ -1,0 +1,15 @@
+- name: Provisioning NFS volume on NFS server
+  hosts: linux-nfs-server
+  become: true
+
+  vars:
+    k8s: true
+    cluster_name: ocp
+    namespace_name: default
+    pvc_name: default
+    pvc_size: 1Gi
+    vg_name: vg_nfs
+
+  roles:
+    - role: provisioning-nfs-export
+
