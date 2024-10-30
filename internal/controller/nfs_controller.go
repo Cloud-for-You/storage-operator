@@ -191,7 +191,6 @@ func (r *NfsReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 			}
 
 			if nfs.Status.Automation == storagev1.AutomationRunning {
-				time.Sleep(10 * time.Second)
 				validateAutomation, err := selectedPlugin.Validate(nfs.Status)
 				if err != nil {
 					automationStatus := storagev1.AutomationError
