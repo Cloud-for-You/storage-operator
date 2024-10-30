@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.6.0](https://github.com/Cloud-for-You/storage-operator/compare/v1.5.1...v1.6.0) (2024-10-30)
+
+
+### Features
+
+* 58 ansible awx automation ([#59](https://github.com/Cloud-for-You/storage-operator/issues/59)) ([b748252](https://github.com/Cloud-for-You/storage-operator/commit/b7482524628ed16d19fa3e5553aa58721d7fd098))
+* Implementace AWX automatizace pro vytváření exportovaných NFS volume ([e4ec475](https://github.com/Cloud-for-You/storage-operator/commit/e4ec475f6db0e98f99d4b4d2619a58aa8e89187e))
+* vydani verze vcetne AWX automatizace ([9c79f83](https://github.com/Cloud-for-You/storage-operator/commit/9c79f839c66bd7ec11ac73c310b2f0a70a62b1d6))
+
 ## [1.5.1](https://github.com/Cloud-for-You/storage-operator/compare/v1.5.0...v1.5.1) (2024-06-24)
 
 
