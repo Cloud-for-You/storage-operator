@@ -163,7 +163,7 @@ func validateJobTemplate(
 ) (responseTemplate httpclient.APIResponse) {
 	params := httpclient.RequestParams{
 		URL:    fmt.Sprintf("%s%s", host, fmt.Sprintf("/api/v2/jobs/%s/", jobId)),
-		Method: "POST",
+		Method: "GET",
 		Headers: map[string]string{
 			"Authorization": fmt.Sprintf("Bearer %s", token),
 			"Content-Type":  "application/json",
