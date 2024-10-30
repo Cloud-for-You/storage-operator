@@ -1,9 +1,11 @@
 package provisioner
 
+import (
+	storagev1 "github.com/Cloud-for-You/storage-operator/api/v1"
+)
+
 type Response struct {
-	ProvisioningPlugin string      `json:"provisioning_plugin"`
-	State              string      `json:"state"`
-	Data               interface{} `json:"response_data,omitempty"`
+	Data interface{} `json:"data,omitempty"`
 }
 
 type JobParameters struct {
@@ -23,5 +25,5 @@ type ExtraVars struct {
 
 type Plugin interface {
 	Run(jobId string, jobParameters JobParameters) (*Response, error)
-	Validate(params interface{}) (*Response, error)
+	Validate(status storagev1.NfsStatus) (*Response, error)
 }

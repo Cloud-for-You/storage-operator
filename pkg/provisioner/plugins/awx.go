@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strconv"
 
 	"github.com/Cloud-for-You/storage-operator/pkg/httpclient"
 	"github.com/Cloud-for-You/storage-operator/pkg/provisioner"
@@ -35,29 +36,80 @@ func (p *AWXPlugin) Run(
 	}
 	bearerToken := gjson.Get(string(tokenJson), "token").Str
 
-	// Run jobTemplate in AWX
+	// Call runJobTemplate()
 	jobTemplate := runJobTemplate(host, bearerToken, jobId, jobParameters)
 	jobTemplateJson, err := json.Marshal(jobTemplate)
 	if err != nil {
 		return nil, err
 	}
 	responseData := map[string]interface{}{
-		"job_id": gjson.Get(string(jobTemplateJson), "job").Str,
+		"job_id": strconv.Itoa(int(gjson.Get(string(jobTemplateJson), "job").Int())),
 		"status": gjson.Get(string(jobTemplateJson), "status").Str,
 	}
-	provisionerResponse.ProvisioningPlugin = "awx"
-	provisionerResponse.State = storagev1.AutomationRunning
 	provisionerResponse.Data = responseData
 	return provisionerResponse, nil
 }
 
-func (p *AWXPlugin) Validate(params interface{}) (*provisioner.Response, error) {
-	fmt.Println("Validating AWX with params:", params)
-	response := &provisioner.Response{}
-	return response, nil
+func (p *AWXPlugin) Validate(status storagev1.NfsStatus) (*provisioner.Response, error) {
+	log.Log.Info("Validate AWX job")
+	provisionerResponse := &provisioner.Response{}
+
+	host := os.Getenv("AWX_URL")
+	username := os.Getenv("AWX_USERNAME")
+	password := os.Getenv("AWX_PASSWORD")
+
+	var message provisioner.Response
+	err := json.Unmarshal([]byte(status.Message), &message)
+	if err != nil {
+		return nil, err
+	}
+
+	if dataMap, ok := message.Data.(map[string]interface{}); ok {
+		if jobId, ok := dataMap["job_id"].(string); ok {
+			// Get BearerToken for username/password
+			token := getToken(host, username, password)
+			tokenJson, err := json.Marshal(token)
+			if err != nil {
+				return nil, err
+			}
+			bearerToken := gjson.Get(string(tokenJson), "token").Str
+
+			// Call validateJobTemplate()
+			jobTemplate := validateJobTemplate(host, bearerToken, jobId)
+			jobTemplateJson, err := json.Marshal(jobTemplate)
+			if err != nil {
+				return nil, err
+			}
+			jobStatus := gjson.Get(string(jobTemplateJson), "status").Str
+
+			switch jobStatus {
+			case "pending":
+				return nil, nil
+			case "running":
+				return nil, nil
+			case "waiting":
+				return nil, nil
+			case "successful":
+				responseData := map[string]interface{}{
+					"job_id": gjson.Get(string(jobTemplateJson), "job").Str,
+					"status": jobStatus,
+				}
+				provisionerResponse.Data = responseData
+				return provisionerResponse, nil
+			default:
+				return nil, fmt.Errorf("unexpected status code: %s", jobStatus)
+			}
+		}
+		return nil, nil
+	}
+	return nil, nil
 }
 
-func getToken(host, username, password string) (responseToken httpclient.APIResponse) {
+func getToken(
+	host string,
+	username string,
+	password string,
+) (responseToken httpclient.APIResponse) {
 	params := httpclient.RequestParams{
 		URL:    fmt.Sprintf("%s%s", host, "/api/v2/tokens/"),
 		Method: "POST",
@@ -98,6 +150,29 @@ func runJobTemplate(
 	response, err := httpclient.SendRequest(params)
 	if err != nil {
 		log.Log.Error(err, "Unable launch template")
+		return nil
+	}
+
+	return response
+}
+
+func validateJobTemplate(
+	host string,
+	token string,
+	jobId string,
+) (responseTemplate httpclient.APIResponse) {
+	params := httpclient.RequestParams{
+		URL:    fmt.Sprintf("%s%s", host, fmt.Sprintf("/api/v2/jobs/%s/", jobId)),
+		Method: "POST",
+		Headers: map[string]string{
+			"Authorization": fmt.Sprintf("Bearer %s", token),
+			"Content-Type":  "application/json",
+		},
+	}
+
+	response, err := httpclient.SendRequest(params)
+	if err != nil {
+		log.Log.Error(err, "Unable validate job")
 		return nil
 	}
 

@@ -150,35 +150,35 @@ func (r *NfsReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 			if nfs.Status.Automation == storagev1.AutomationError {
 				return ctrl.Result{}, err
 			}
+
+			var selectedPlugin provisioner.Plugin
+			var jobParameters provisioner.JobParameters
+			switch provisionerName {
+			case "awx":
+				selectedPlugin = &provisioning_plugin.AWXPlugin{}
+			case "generic":
+				selectedPlugin = &provisioning_plugin.GenericPlugin{}
+			}
+
 			if nfs.Status.Automation == "" {
-				var selectedPlugin provisioner.Plugin
-				var jobParameters provisioner.JobParameters
-
-				switch provisionerName {
-				case "awx":
-					selectedPlugin = &provisioning_plugin.AWXPlugin{}
-				case "generic":
-					selectedPlugin = &provisioning_plugin.GenericPlugin{}
-				}
-
 				jobParameters.Limit = storageClass.Parameters["hosts"]
 				jobParameters.ExtraVars.ClusterName = os.Getenv("CLUSTER_NAME")
 				jobParameters.ExtraVars.NamespaceName = nfs.Namespace
 				jobParameters.ExtraVars.PvcName = nfs.Name
 				jobParameters.ExtraVars.PvcSize = nfs.Spec.Capacity
 
-				automation, err := selectedPlugin.Run(storageClass.Parameters["job-template-id"], jobParameters)
+				runAutomation, err := selectedPlugin.Run(storageClass.Parameters["job-template-id"], jobParameters)
 				if err != nil {
 					automationStatus := storagev1.AutomationError
-					message := fmt.Sprintf("Automation [%s]: %v", provisionerName, err.Error())
+					message := fmt.Sprintf("Run automation [%s]: %v", provisionerName, err.Error())
 					messagePtr := &message
 					if err := r.setStatus(ctx, nfs, nil, nil, &automationStatus, messagePtr); err != nil {
 						log.Error(err, "Failed to update Nfs status")
 					}
-					return ctrl.Result{RequeueAfter: 10 * time.Second}, nil
+					return ctrl.Result{}, err
 				}
-				automationStatus := automation.State
-				AutomationData, err := json.Marshal(automation)
+				automationStatus := storagev1.AutomationRunning
+				AutomationData, err := json.Marshal(runAutomation)
 				if err != nil {
 					return ctrl.Result{}, err
 				}
@@ -189,12 +189,28 @@ func (r *NfsReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 				}
 				return ctrl.Result{RequeueAfter: 10 * time.Second}, nil
 			}
+
 			if nfs.Status.Automation == storagev1.AutomationRunning {
-				//automationStatus := storagev1.AutomationCompleted
-				//if err := r.setStatus(ctx, nfs, nil, nil, &automationStatus, nil); err != nil {
-				//	log.Error(err, "Failed to update Nfs status")
-				//}
-				return ctrl.Result{}, err
+				time.Sleep(10 * time.Second)
+				validateAutomation, err := selectedPlugin.Validate(nfs.Status)
+				if err != nil {
+					automationStatus := storagev1.AutomationError
+					message := fmt.Sprintf("Validate automation [%s]: %v", provisionerName, err.Error())
+					messagePtr := &message
+					if err := r.setStatus(ctx, nfs, nil, nil, &automationStatus, messagePtr); err != nil {
+						log.Error(err, "Failed to update Nfs status")
+					}
+					return ctrl.Result{}, err
+				}
+				if validateAutomation == nil {
+					return ctrl.Result{RequeueAfter: 10 * time.Second}, nil
+				}
+				automationStatus := storagev1.AutomationCompleted
+				message := ""
+				if err := r.setStatus(ctx, nfs, nil, nil, &automationStatus, &message); err != nil {
+					log.Error(err, "Failed to update Nfs status")
+				}
+				return ctrl.Result{Requeue: true}, nil
 			}
 		} else {
 			log.Info("Automation is not supported, skip automation")
